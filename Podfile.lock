@@ -1,0 +1,34 @@
+PODS:
+  - Protobuf (3.22.1)
+  - SSZipArchive (2.4.3)
+  - SVGAPlayer (2.5.7):
+    - SVGAPlayer/Core (= 2.5.7)
+    - SVGAPlayer/ProtoFiles (= 2.5.7)
+  - SVGAPlayer/Core (2.5.7):
+    - SSZipArchive (>= 1.8.1)
+    - SVGAPlayer/ProtoFiles
+  - SVGAPlayer/ProtoFiles (2.5.7):
+    - Protobuf (~> 3.4)
+  - SVProgressHUD (2.2.5)
+
+DEPENDENCIES:
+  - Protobuf (= 3.22.1)
+  - SVGAPlayer
+  - SVProgressHUD
+
+SPEC REPOS:
+  trunk:
+    - Protobuf
+    - SSZipArchive
+    - SVGAPlayer
+    - SVProgressHUD
+
+SPEC CHECKSUMS:
+  Protobuf: d7f7c8329edf5eb8af65547a8ba3e9c1cee927d5
+  SSZipArchive: fe6a26b2a54d5a0890f2567b5cc6de5caa600aef
+  SVGAPlayer: 318b85a78b61292d6ae9dfcd651f3f0d1cdadd86
+  SVProgressHUD: 1428aafac632c1f86f62aa4243ec12008d7a51d6
+
+PODFILE CHECKSUM: fcca533f66e6e027702e8c3daad7bcc6122d69cf
+
+COCOAPODS: 1.12.1
