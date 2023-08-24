@@ -11,35 +11,48 @@ import SVGAPlayer
 @objc
 protocol SVGAParsePlayerDelegate: NSObjectProtocol {
     @objc optional
+    /// 状态发生改变
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          statusDidChanged status: SVGAParsePlayerStatus,
                          oldStatus: SVGAParsePlayerStatus)
     
     @objc optional
+    /// SVGA未知来源
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          unknownSvga source: String)
     
     @objc optional
+    /// 远程SVGA资源下载失败
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          downloadFailed error: Error)
     
     @objc optional
+    /// 远程SVGA资源解析失败
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          dataParseFailed error: Error)
     
     @objc optional
+    /// 本地SVGA资源解析失败
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          assetParseFailed error: Error)
     
     @objc optional
+    /// SVGA资源解析成功
+    func svgaParsePlayer(_ player: SVGAParsePlayer,
+                         svga source: String,
+                         parseDone entity: SVGAVideoEntity)
+    
+    @objc optional
+    /// SVGA动画执行回调
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          didAnimatedToFrame frame: Int)
     
     @objc optional
+    /// SVGA动画结束
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          didFinishedAnimation isUserStop: Bool)
@@ -140,7 +153,7 @@ class SVGAParsePlayer: SVGAPlayer {
         }
     }
     
-    /// 是否启用内存缓存
+    /// 是否启用内存缓存（SVGAParser）
     var isEnabledMemoryCache = false
     
     /// 代理
@@ -279,7 +292,7 @@ private extension SVGAParsePlayer {
             Self.debugLog("内部下载 - 远程SVGA资源为空")
             self._stopSVGA(isClear: true)
             
-            let error = NSError(domain: "SVGAParsePlayer", code: 404, userInfo: [NSLocalizedDescriptionKey: "SVGA资源为空"])
+            let error = NSError(domain: "SVGAParsePlayer", code: -3, userInfo: [NSLocalizedDescriptionKey: "SVGA资源为空"])
             self._loadFaild(.downloadFailed(svgaSource, error))
             
         } failureBlock: { [weak self] e in
@@ -289,7 +302,7 @@ private extension SVGAParsePlayer {
             Self.debugLog("内部下载 - 远程SVGA下载失败 \(svgaSource)")
             self._stopSVGA(isClear: true)
             
-            let error = e ?? NSError(domain: "SVGAParsePlayer", code: 404, userInfo: [NSLocalizedDescriptionKey: "SVGA下载失败"])
+            let error = e ?? NSError(domain: "SVGAParsePlayer", code: -2, userInfo: [NSLocalizedDescriptionKey: "SVGA下载失败"])
             self._loadFaild(.downloadFailed(svgaSource, error))
         }
     }
@@ -343,6 +356,7 @@ private extension SVGAParsePlayer {
         guard self.svgaSource == svgaSource else { return }
         self.entity = entity
         videoItem = entity
+        myDelegate?.svgaParsePlayer?(self, svga: svgaSource, parseDone: entity)
         _playSVGA(fromFrame: currFrame, isAutoPlay: isWillAutoPlay)
     }
 }

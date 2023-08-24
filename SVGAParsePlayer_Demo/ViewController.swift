@@ -27,7 +27,7 @@ class ViewController: UIViewController {
         
         SVGAParsePlayer.downloader = { svgaSource, success, failure in
             guard let url = URL(string: svgaSource) else {
-                failure(NSError(domain: "SVGAParsePlayer", code: 404, userInfo: [NSLocalizedDescriptionKey: "路径错误"]))
+                failure(NSError(domain: "SVGAParsePlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "路径错误"]))
                 return
             }
             
