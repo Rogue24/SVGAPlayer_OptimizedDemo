@@ -88,12 +88,14 @@ class SVGAParsePlayer: SVGAPlayer {
         print("jpjpjp \(str)")
     }
     
-    private var entity: SVGAVideoEntity?
     private var asyncTag: UUID?
     private var isWillAutoPlay = false
     
     /// SVGA资源路径
     private(set) var svgaSource: String = ""
+    
+    /// SVGA资源
+    private(set) var entity: SVGAVideoEntity?
     
     /// 动画时长
     var duration: TimeInterval { entity?.duration ?? 0 }
@@ -189,6 +191,7 @@ private extension SVGAParsePlayer {
         Self.debugLog("开始加载 \(svgaSource) - 先清空当前动画")
         stopAnimation()
         videoItem = nil
+        clearDynamicObjects()
         
         let newTag = UUID()
         self.asyncTag = newTag
@@ -370,6 +373,7 @@ private extension SVGAParsePlayer {
             svgaSource = ""
             entity = nil
             videoItem = nil
+            clearDynamicObjects()
             
             Self.debugLog("停止 - 清空")
             status = .idle
