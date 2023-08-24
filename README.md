@@ -1,6 +1,6 @@
 # SVGAParsePlayer
 
-Convenient SVGA Player, is a secondary encapsulation of SVGAPlayer.
+Convenient SVGA Player, is a secondary encapsulation of [SVGAPlayer](https://github.com/svga/SVGAPlayer-iOS).
 
 [中文](https://juejin.cn/spost/7270698918286147620)
 
@@ -92,7 +92,7 @@ var isEnabledMemoryCache = false
 
 Just to clarify, if you're playing the same resource path and the resource is either in the process of loading or has already been loaded, it won't reload redundantly. Internally, it determines whether the SVGA resource is the same based on the resource path. Only when a new resource path is provided will the previous resource be cleared to load the new one. This is to ensure that the same resource is not loaded repeatedly.
 
-Loading remote SVGA resources involves utilizing the built-in downloading method of the SVGAParser. If you require a customized downloading approach, such as loading cached resources, you can define your own downloader:
+Loading remote SVGA resources involves utilizing the built-in downloading method of the `SVGAParser`. If you require a customized downloading approach, such as loading cached resources, you can define your own downloader:
 
 ```swift
 SVGAParsePlayer.downloader = { svgaSource, success, failure in
@@ -111,9 +111,9 @@ SVGAParsePlayer.downloader = { svgaSource, success, failure in
     }
 }
 ```
-- Simply implement the closure `SVGAParsePlayer. downloader`.
+- Simply implement the closure `SVGAParsePlayer.downloader`.
 
-Note: Internally, the downloader is invoked for downloading by determining whether the resource path includes the http:// and https:// prefixes; otherwise, the local resource loading method will be used.
+Note: Internally, the downloader is invoked for downloading by determining whether the resource path includes the `http://` and `https://` prefixes; otherwise, the local resource loading method will be used.
 
 ## Mutually exclusive API
 
