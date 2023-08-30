@@ -2,7 +2,7 @@
 
 Convenient SVGA Player, is a secondary encapsulation of [SVGAPlayer](https://github.com/svga/SVGAPlayer-iOS).
 
-[中文](https://juejin.cn/spost/7270698918286147620)
+[中文](https://juejin.cn/post/7270698918286147620)
 
     Feature:
         ✅ Built-in SVGA parser;
@@ -43,7 +43,7 @@ override func viewDidLoad() {
 }
 ```
 
-`SVGAParsePlayer` itself inherits from `SVGAPlayer`, and the basic setup remains the same as before. The main difference lies in the usage of the API, which has become more user-friendly.
+`SVGAParsePlayer` itself inherits from `SVGAPlayer`, and the basic setup remains the same as before. The main difference lies in the usage of the API, which has become more user-friendly:
 
 ```swift
 /// Play SVGA
@@ -83,7 +83,7 @@ player.reset(isAutoPlay: false)
 player.stop(isClear: false)
 ```
 
-Customizable settings:
+### Customizable settings
 
 ```swift
 /// Is there an animated transition
