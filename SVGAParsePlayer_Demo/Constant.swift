@@ -7,6 +7,21 @@
 
 import Foundation
 
+var cacheDirPath: String {
+    NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, .userDomainMask, true).first ?? ""
+}
+
+func cacheFilePath(_ fileName: String) -> String {
+    cacheDirPath + "/" + fileName
+}
+
+let LocalSources = [
+    "Goddess",
+    "heartbeat",
+    cacheFilePath("Rocket.svga"),
+    cacheFilePath("Rose.svga"),
+]
+
 let RemoteSources = [
     "https://cdn.jsdelivr.net/gh/svga/SVGA-Samples@master/EmptyState.svga?raw=true",
     "https://cdn.jsdelivr.net/gh/svga/SVGA-Samples@master/HamburgerArrow.svga?raw=true",
@@ -19,11 +34,4 @@ let RemoteSources = [
     "https://cdn.jsdelivr.net/gh/svga/SVGA-Samples@master/kingset.svga?raw=true",
     "https://cdn.jsdelivr.net/gh/svga/SVGA-Samples@master/posche.svga?raw=true",
     "https://cdn.jsdelivr.net/gh/svga/SVGA-Samples@master/rose.svga?raw=true",
-]
-
-let LocalSources = [
-    "Goddess",
-    "heartbeat",
-    "Rocket",
-    "Rose"
 ]

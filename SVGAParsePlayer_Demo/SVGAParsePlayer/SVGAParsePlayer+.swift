@@ -23,3 +23,10 @@ extension String {
         return hashed.map { String(format: "%02hhx", $0) }.joined()
     }
 }
+
+extension NSObject {
+    var memoryAddress: String {
+        let address = unsafeBitCast(self, to: Int.self)
+        return String(format: "%p", address)
+    }
+}

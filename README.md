@@ -52,13 +52,22 @@ override func viewDidLoad() {
 ///   - isAutoPlay: Automatically start playing after loading
 player.play("your_animation_path", fromFrame: 0, isAutoPlay: true)
 
+/// Play SVGA directly through SVGAVideoEntity
+/// - Parameters:
+///   - fromFrame: Starting from frame
+///   - isAutoPlay: Automatically start playing after loading
+/// If played using this method, the `svgaSource` would be the memory address of the `entity` object.
+let entity: SVGAVideoEntity = ...
+player.play(with: entity, fromFrame: 0, isAutoPlay: true)
+
 /// Play the current SVGA (starting from the current frame)
 player.play()
 
 /// Play current SVGA
 /// - Parameters:
 ///  - fromFrame: Starting from frame
-player.play(fromFrame: 0)
+///  - isAutoPlay: Automatically start playing after loading
+player.play(fromFrame: 0, isAutoPlay: true)
 
 /// Pause playback
 player.pause()
@@ -114,6 +123,31 @@ SVGAParsePlayer.downloader = { svgaSource, success, failure in
 - Simply implement the closure `SVGAParsePlayer.downloader`.
 
 Note: Internally, the downloader is invoked for downloading by determining whether the resource path includes the `http://` and `https://` prefixes; otherwise, the local resource loading method will be used.
+
+If you want to have full control over the loading process, you can implement the closure `SVGAParsePlayer.loader` yourself:
+```swift
+SVGAParsePlayer.loader = { svgaSource, success, failure, forwardDownload, forwardLoadAsset in
+    // Determine if the SVGA is from the disk.
+    guard FileManager.default.fileExists(atPath: svgaSource) else {
+        if svgaSource.hasPrefix("http://") || svgaSource.hasPrefix("https://") {
+            forwardDownload(svgaSource)
+        } else {
+            forwardLoadAsset(svgaSource)
+        }
+        return
+    }
+    
+    // Load the SVGA from the disk.
+    do {
+        let data = try Data(contentsOf: URL(fileURLWithPath: svgaSource))
+        success(data)
+    } catch {
+        failure(error)
+    }
+}
+```
+- forwardDownload: The original remote loading method within `SVGAParsePlayer` (if `SVGAParsePlayer.downloader` is implemented, this closure is called).
+- forwardLoadAsset: The original local resource loading method within `SVGAParsePlayer`.
 
 ## Mutually exclusive API
 

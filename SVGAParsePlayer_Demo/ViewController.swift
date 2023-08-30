@@ -17,33 +17,15 @@ class ViewController: UIViewController {
         setupOperationBar()
         setupPlayer()
         
-        player.isAnimated = true
-        player.isHidesWhenStopped = true
-        player.myDelegate = self
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
+        setupLoader()
+        setupDownloader()
         
-        SVGAParsePlayer.downloader = { svgaSource, success, failure in
-            guard let url = URL(string: svgaSource) else {
-                failure(NSError(domain: "SVGAParsePlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "路径错误"]))
-                return
-            }
-            
-            Task {
-                do {
-                    let (data, _) = try await URLSession.shared.data(from: url)
-                    await MainActor.run { success(data) }
-                } catch {
-                    await MainActor.run { failure(error) }
-                }
-            }
-        }
+        writeBundleDataToCache("Rocket")
+        writeBundleDataToCache("Rose")
     }
 }
 
-// MARK: - Actions
+// MARK: - Player Actions
 private extension ViewController {
     @objc func playRemote() {
         let svga = RemoteSources.randomElement()!
@@ -93,7 +75,7 @@ extension ViewController: SVGAParsePlayerDelegate {
         SVProgressHUD.showError(withStatus: "未知来源")
     }
     
-    func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, downloadFailed error: Error) {
+    func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, dataLoadFailed error: Error) {
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showError(withStatus: error.localizedDescription)
     }
@@ -109,7 +91,7 @@ extension ViewController: SVGAParsePlayerDelegate {
     }
 }
 
-// MARK: - Setup UI
+// MARK: - Setup UI & Data
 private extension ViewController {
     func setupOperationBar() {
         let h = NavBarH + NavBarH + DiffTabBarH
@@ -192,5 +174,65 @@ private extension ViewController {
         player.contentMode = .scaleAspectFit
         player.frame = CGRect(x: 0, y: StatusBarH, width: PortraitScreenWidth, height: PortraitScreenHeight - StatusBarH - (NavBarH + NavBarH + DiffTabBarH))
         view.addSubview(player)
+        
+        player.isAnimated = true
+        player.isHidesWhenStopped = true
+        player.myDelegate = self
+    }
+    
+    func setupLoader() {
+        SVGAParsePlayer.loader = { svgaSource, success, failure, forwardDownload, forwardLoadAsset in
+            guard FileManager.default.fileExists(atPath: svgaSource) else {
+                if svgaSource.hasPrefix("http://") || svgaSource.hasPrefix("https://") {
+                    forwardDownload(svgaSource)
+                } else {
+                    forwardLoadAsset(svgaSource)
+                }
+                return
+            }
+            
+            print("jpjpjp 加载磁盘的SVGA - \(svgaSource)")
+            do {
+                let data = try Data(contentsOf: URL(fileURLWithPath: svgaSource))
+                success(data)
+            } catch {
+                failure(error)
+            }
+        }
+    }
+    
+    func setupDownloader() {
+        SVGAParsePlayer.downloader = { svgaSource, success, failure in
+            guard let url = URL(string: svgaSource) else {
+                failure(NSError(domain: "SVGAParsePlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "路径错误"]))
+                return
+            }
+            
+            Task {
+                do {
+                    let (data, _) = try await URLSession.shared.data(from: url)
+                    await MainActor.run { success(data) }
+                } catch {
+                    await MainActor.run { failure(error) }
+                }
+            }
+        }
+    }
+    
+    func writeBundleDataToCache(_ resName: String) {
+        guard let url = Bundle.main.url(forResource: resName, withExtension: "svga") else {
+            JPrint(resName, "路径不存在")
+            return
+        }
+        
+        let cacheUrl = URL(fileURLWithPath: cacheFilePath(resName + ".svga"))
+        try? FileManager.default.removeItem(at: cacheUrl)
+        
+        do {
+            let data = try Data(contentsOf: url)
+            try data.write(to: cacheUrl)
+        } catch {
+            JPrint(resName, "写入错误：", error)
+        }
     }
 }

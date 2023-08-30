@@ -22,13 +22,13 @@ protocol SVGAParsePlayerDelegate: NSObjectProtocol {
                          unknownSvga source: String)
     
     @objc optional
-    /// 远程SVGA资源下载失败
+    /// SVGA资源加载失败
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
-                         downloadFailed error: Error)
+                         dataLoadFailed error: Error)
     
     @objc optional
-    /// 远程SVGA资源解析失败
+    /// 加载的SVGA资源解析失败
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          dataParseFailed error: Error)
@@ -69,7 +69,7 @@ enum SVGAParsePlayerStatus: Int {
 
 enum SVGAParsePlayerError: Swift.Error, LocalizedError {
     case unknownSource(_ svgaSource: String)
-    case downloadFailed(_ svgaSource: String, _ error: Swift.Error)
+    case dataLoadFailed(_ svgaSource: String, _ error: Swift.Error)
     case dataParseFailed(_ svgaSource: String, _ error: Swift.Error)
     case assetParseFailed(_ svgaSource: String, _ error: Swift.Error)
     
@@ -77,7 +77,7 @@ enum SVGAParsePlayerError: Swift.Error, LocalizedError {
         switch self {
         case .unknownSource:
             return "未知来源"
-        case let .downloadFailed(_, error): fallthrough
+        case let .dataLoadFailed(_, error): fallthrough
         case let .dataParseFailed(_, error): fallthrough
         case let .assetParseFailed(_, error):
             return (error as NSError).localizedDescription
@@ -87,14 +87,23 @@ enum SVGAParsePlayerError: Swift.Error, LocalizedError {
 
 @objcMembers
 class SVGAParsePlayer: SVGAPlayer {
-    typealias DownloadSuccess = (_ data: Data) -> Void
-    typealias DownloadFailure = (_ error: Error) -> Void
-    typealias Downloader = (_ svgaSource: String,
-                            _ success: @escaping DownloadSuccess,
-                            _ failure: @escaping DownloadFailure) -> Void
+    typealias LoadSuccess = (_ data: Data) -> Void
+    typealias LoadFailure = (_ error: Error) -> Void
+    typealias ForwardLoad = (_ svgaSource: String) -> Void
+    
+    /// 自定义加载器
+    static var loader: Loader? = nil
+    typealias Loader = (_ svgaSource: String,
+                        _ success: @escaping LoadSuccess,
+                        _ failure: @escaping LoadFailure,
+                        _ forwardDownload: @escaping ForwardLoad,
+                        _ forwardLoadAsset: @escaping ForwardLoad) -> Void
     
     /// 自定义下载器
     static var downloader: Downloader? = nil
+    typealias Downloader = (_ svgaSource: String,
+                            _ success: @escaping LoadSuccess,
+                            _ failure: @escaping LoadFailure) -> Void
     
     /// 打印调试日志
     static func debugLog(_ str: String) {
@@ -180,7 +189,7 @@ private extension SVGAParsePlayer {
     func _loadSVGA(_ svgaSource: String, fromFrame: Int, isAutoPlay: Bool) {
         if svgaSource.count == 0 {
             _stopSVGA(isClear: true)
-            _loadFaild(.unknownSource(svgaSource))
+            _failedHandler(.unknownSource(svgaSource))
             return
         }
         
@@ -209,22 +218,56 @@ private extension SVGAParsePlayer {
         let newTag = UUID()
         self.asyncTag = newTag
         
-        if svgaSource.hasPrefix("http://") || svgaSource.hasPrefix("https://") {
-            _downLoadData(svgaSource, newTag, isAutoPlay)
-        } else {
-            _parseFromAsset(svgaSource, newTag, isAutoPlay)
+        guard let loader = Self.loader else {
+            if svgaSource.hasPrefix("http://") || svgaSource.hasPrefix("https://") {
+                _downLoadData(svgaSource, newTag, isAutoPlay)
+            } else {
+                _parseFromAsset(svgaSource, newTag, isAutoPlay)
+            }
+            return
+        }
+        
+        let success = _getLoadSuccess(svgaSource, newTag, isAutoPlay)
+        let failure = _getLoadFailure(svgaSource, newTag, isAutoPlay)
+        let forwardDownload: ForwardLoad = { [weak self] in self?._downLoadData($0, newTag, isAutoPlay) }
+        let forwardLoadAsset: ForwardLoad = { [weak self] in self?._parseFromAsset($0, newTag, isAutoPlay) }
+        loader(svgaSource, success, failure, forwardDownload, forwardLoadAsset)
+    }
+}
+
+private extension SVGAParsePlayer {
+    func _getLoadSuccess(_ svgaSource: String, _ asyncTag: UUID, _ isAutoPlay: Bool) -> LoadSuccess {
+        return { [weak self] data in
+            guard let self, self.asyncTag == asyncTag else { return }
+
+            let newTag = UUID()
+            self.asyncTag = newTag
+
+            Self.debugLog("外部加载SVGA - 成功 \(svgaSource)")
+            self._parseFromData(data, svgaSource, newTag, isAutoPlay)
         }
     }
     
-    func _loadFaild(_ error: SVGAParsePlayerError) {
+    func _getLoadFailure(_ svgaSource: String, _ asyncTag: UUID, _ isAutoPlay: Bool) -> LoadFailure {
+        return { [weak self] error in
+            guard let self, self.asyncTag == asyncTag else { return }
+            self.asyncTag = nil
+
+            Self.debugLog("外部加载SVGA - 失败 \(svgaSource)")
+            self._stopSVGA(isClear: true)
+            self._failedHandler(.dataLoadFailed(svgaSource, error))
+        }
+    }
+    
+    func _failedHandler(_ error: SVGAParsePlayerError) {
         guard let myDelegate else { return }
         
         switch error {
         case let .unknownSource(s):
             myDelegate.svgaParsePlayer?(self, unknownSvga: s)
             
-        case let .downloadFailed(s, e):
-            myDelegate.svgaParsePlayer?(self, svga: s, downloadFailed: e)
+        case let .dataLoadFailed(s, e):
+            myDelegate.svgaParsePlayer?(self, svga: s, dataLoadFailed: e)
             
         case let .dataParseFailed(s, e):
             myDelegate.svgaParsePlayer?(self, svga: s, dataParseFailed: e)
@@ -245,25 +288,8 @@ private extension SVGAParsePlayer {
             return
         }
         
-        let success: DownloadSuccess = { [weak self] data in
-            guard let self, self.asyncTag == asyncTag else { return }
-
-            let newTag = UUID()
-            self.asyncTag = newTag
-
-            Self.debugLog("外部下载 - 远程SVGA下载成功 \(svgaSource)")
-            self._parseFromData(data, svgaSource, newTag, isAutoPlay)
-        }
-        
-        let failure: DownloadFailure = { [weak self] error in
-            guard let self, self.asyncTag == asyncTag else { return }
-            self.asyncTag = nil
-
-            Self.debugLog("外部下载 - 远程SVGA下载失败 \(svgaSource)")
-            self._stopSVGA(isClear: true)
-            self._loadFaild(.downloadFailed(svgaSource, error))
-        }
-        
+        let success = _getLoadSuccess(svgaSource, asyncTag, isAutoPlay)
+        let failure = _getLoadFailure(svgaSource, asyncTag, isAutoPlay)
         downloader(svgaSource, success, failure)
     }
     
@@ -272,7 +298,7 @@ private extension SVGAParsePlayer {
                        _ isAutoPlay: Bool) {
         guard let url = URL(string: svgaSource) else {
             _stopSVGA(isClear: true)
-            _loadFaild(.unknownSource(svgaSource))
+            _failedHandler(.unknownSource(svgaSource))
             return
         }
         
@@ -282,28 +308,28 @@ private extension SVGAParsePlayer {
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("内部下载 - 远程SVGA下载成功 \(svgaSource)")
+            Self.debugLog("内部下载远程SVGA - 成功 \(svgaSource)")
             
             if let entity {
                 self._parseDone(svgaSource, entity)
                 return
             }
             
-            Self.debugLog("内部下载 - 远程SVGA资源为空")
+            Self.debugLog("内部下载远程SVGA - 资源为空")
             self._stopSVGA(isClear: true)
             
             let error = NSError(domain: "SVGAParsePlayer", code: -3, userInfo: [NSLocalizedDescriptionKey: "SVGA资源为空"])
-            self._loadFaild(.downloadFailed(svgaSource, error))
+            self._failedHandler(.dataLoadFailed(svgaSource, error))
             
         } failureBlock: { [weak self] e in
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("内部下载 - 远程SVGA下载失败 \(svgaSource)")
+            Self.debugLog("内部下载远程SVGA - 失败 \(svgaSource)")
             self._stopSVGA(isClear: true)
             
             let error = e ?? NSError(domain: "SVGAParsePlayer", code: -2, userInfo: [NSLocalizedDescriptionKey: "SVGA下载失败"])
-            self._loadFaild(.downloadFailed(svgaSource, error))
+            self._failedHandler(.dataLoadFailed(svgaSource, error))
         }
     }
     
@@ -317,16 +343,16 @@ private extension SVGAParsePlayer {
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("远程SVGA解析成功 \(svgaSource)")
+            Self.debugLog("解析远程SVGA - 成功 \(svgaSource)")
             self._parseDone(svgaSource, entity)
             
         } failureBlock: { [weak self] error in
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("远程SVGA解析失败 \(svgaSource) \(error)")
+            Self.debugLog("解析远程SVGA - 失败 \(svgaSource) \(error)")
             self._stopSVGA(isClear: true)
-            self._loadFaild(.dataParseFailed(svgaSource, error))
+            self._failedHandler(.dataParseFailed(svgaSource, error))
         }
     }
     
@@ -339,16 +365,16 @@ private extension SVGAParsePlayer {
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("本地SVGA解析成功 \(svgaSource)")
+            Self.debugLog("解析本地SVGA - 成功 \(svgaSource)")
             self._parseDone(svgaSource, entity)
             
         } failureBlock: { [weak self] error in
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("本地SVGA解析失败 \(svgaSource) \(error)")
+            Self.debugLog("解析本地SVGA - 失败 \(svgaSource) \(error)")
             self._stopSVGA(isClear: true)
-            self._loadFaild(.assetParseFailed(svgaSource, error))
+            self._failedHandler(.assetParseFailed(svgaSource, error))
         }
     }
     
@@ -479,6 +505,45 @@ extension SVGAParsePlayer {
         play(svgaSource, fromFrame: 0, isAutoPlay: true)
     }
     
+    /// 播放目标SVGA
+    /// - Parameters:
+    ///   - entity: SVGA资源（`svgaSource`为`entity`的内存地址）
+    ///   - fromFrame: 从第几帧开始
+    ///   - isAutoPlay: 是否自动开始播放
+    func play(with entity: SVGAVideoEntity, fromFrame: Int, isAutoPlay: Bool) {
+        asyncTag = nil
+        
+        let svgaSource = entity.memoryAddress
+        guard self.svgaSource != svgaSource else {
+            _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay)
+            return
+        }
+        
+        self.svgaSource = svgaSource
+        self.entity = nil
+        status = .idle
+        
+        _hideIfNeeded { [weak self] in
+            guard let self else { return }
+            
+            self.stopAnimation()
+            self.videoItem = nil
+            self.clearDynamicObjects()
+            
+            self.entity = entity
+            self.videoItem = entity
+            
+            self._playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay)
+        }
+    }
+    
+    /// 播放目标SVGA（从头开始、自动播放）
+    /// - Parameters:
+    ///   - entity: SVGA资源（`svgaSource`为`entity`的内存地址）
+    func play(with entity: SVGAVideoEntity) {
+        play(with: entity, fromFrame: 0, isAutoPlay: true)
+    }
+    
     /// 播放当前SVGA（从当前所在帧开始）
     func play() {
         switch status {
@@ -489,24 +554,25 @@ extension SVGAParsePlayer {
         case .playing:
             return
         default:
-            play(fromFrame: currFrame)
+            play(fromFrame: currFrame, isAutoPlay: true)
         }
     }
     
     /// 播放当前SVGA
     /// - Parameters:
     ///  - fromFrame: 从第几帧开始
-    func play(fromFrame: Int) {
+    ///  - isAutoPlay: 是否自动开始播放
+    func play(fromFrame: Int, isAutoPlay: Bool) {
         guard svgaSource.count > 0 else { return }
         
         if entity == nil {
             Self.debugLog("播放 - 需要加载")
-            _loadSVGA(svgaSource, fromFrame: fromFrame, isAutoPlay: true)
+            _loadSVGA(svgaSource, fromFrame: fromFrame, isAutoPlay: isAutoPlay)
             return
         }
         
         Self.debugLog("播放 - 无需加载 继续")
-        _playSVGA(fromFrame: fromFrame, isAutoPlay: true)
+        _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay)
     }
     
     /// 重置当前SVGA（回到开头）
