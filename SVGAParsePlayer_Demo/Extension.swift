@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CryptoKit
 
 private let JPrintQueue = DispatchQueue(label: "JPrintQueue")
 /// 自定义日志
@@ -252,5 +253,13 @@ extension UIColor {
                 green: CGFloat.random(in: 0...255) / 255.0,
                 blue: CGFloat.random(in: 0...255) / 255.0,
                 alpha: a)
+    }
+}
+
+extension String {
+    var md5 : String {
+        let data = Data(self.utf8)
+        let hashed = Insecure.MD5.hash(data: data)
+        return hashed.map { String(format: "%02hhx", $0) }.joined()
     }
 }

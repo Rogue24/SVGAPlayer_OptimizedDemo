@@ -8,7 +8,7 @@
 import UIKit
 import SVGAPlayer
 
-@objc
+@objc public
 protocol SVGAParsePlayerDelegate: NSObjectProtocol {
     @objc optional
     /// 状态发生改变
@@ -40,25 +40,44 @@ protocol SVGAParsePlayerDelegate: NSObjectProtocol {
                          assetParseFailed error: Error)
     
     @objc optional
+    /// SVGA资源无效
+    func svgaParsePlayer(_ player: SVGAParsePlayer,
+                         svga source: String,
+                         entity: SVGAVideoEntity,
+                         invalid error: Error)
+    
+    @objc optional
     /// SVGA资源解析成功
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          parseDone entity: SVGAVideoEntity)
     
     @objc optional
+    /// SVGA动画已准备好可播放
+    func svgaParsePlayer(_ player: SVGAParsePlayer,
+                         svga source: String,
+                         readyForPlay isPlay: Bool)
+    
+    @objc optional
     /// SVGA动画执行回调
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
-                         didAnimatedToFrame frame: Int)
+                         didAnimatingToFrame frame: Int)
     
     @objc optional
-    /// SVGA动画结束
+    /// SVGA动画完成一次播放
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
-                         didFinishedAnimation isUserStop: Bool)
+                         didFinishedOnceAnimation loopCount: Int)
+    
+    @objc optional
+    /// SVGA动画结束（用户手动停止 or 设置了loops并且达到次数）
+    func svgaParsePlayer(_ player: SVGAParsePlayer,
+                         svga source: String,
+                         didFinishedAllAnimation isUserStop: Bool)
 }
 
-@objc
+@objc public
 enum SVGAParsePlayerStatus: Int {
     case idle
     case loading
@@ -67,13 +86,15 @@ enum SVGAParsePlayerStatus: Int {
     case stopped
 }
 
+public 
 enum SVGAParsePlayerError: Swift.Error, LocalizedError {
     case unknownSource(_ svgaSource: String)
     case dataLoadFailed(_ svgaSource: String, _ error: Swift.Error)
     case dataParseFailed(_ svgaSource: String, _ error: Swift.Error)
     case assetParseFailed(_ svgaSource: String, _ error: Swift.Error)
+    case entityInvalid(_ svgaSource: String, _ entity: SVGAVideoEntity, _ error: Swift.Error)
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .unknownSource:
             return "未知来源"
@@ -81,55 +102,47 @@ enum SVGAParsePlayerError: Swift.Error, LocalizedError {
         case let .dataParseFailed(_, error): fallthrough
         case let .assetParseFailed(_, error):
             return (error as NSError).localizedDescription
+        case let .entityInvalid(_, _, error):
+            return (error as NSError).localizedDescription
         }
     }
 }
 
-@objcMembers
-class SVGAParsePlayer: SVGAPlayer {
-    typealias LoadSuccess = (_ data: Data) -> Void
-    typealias LoadFailure = (_ error: Error) -> Void
-    typealias ForwardLoad = (_ svgaSource: String) -> Void
+@objcMembers public
+class SVGAParsePlayer: SVGAOptimizedPlayer {
+    public typealias LoadSuccess = (_ data: Data) -> Void
+    public typealias LoadFailure = (_ error: Error) -> Void
+    public typealias ForwardLoad = (_ svgaSource: String) -> Void
     
     /// 自定义加载器
-    static var loader: Loader? = nil
-    typealias Loader = (_ svgaSource: String,
-                        _ success: @escaping LoadSuccess,
-                        _ failure: @escaping LoadFailure,
-                        _ forwardDownload: @escaping ForwardLoad,
-                        _ forwardLoadAsset: @escaping ForwardLoad) -> Void
+    public static var loader: Loader? = nil
+    public typealias Loader = (_ svgaSource: String,
+                               _ success: @escaping LoadSuccess,
+                               _ failure: @escaping LoadFailure,
+                               _ forwardDownload: @escaping ForwardLoad,
+                               _ forwardLoadAsset: @escaping ForwardLoad) -> Void
     
     /// 自定义下载器
-    static var downloader: Downloader? = nil
-    typealias Downloader = (_ svgaSource: String,
-                            _ success: @escaping LoadSuccess,
-                            _ failure: @escaping LoadFailure) -> Void
+    public static var downloader: Downloader? = nil
+    public typealias Downloader = (_ svgaSource: String,
+                                   _ success: @escaping LoadSuccess,
+                                   _ failure: @escaping LoadFailure) -> Void
     
-    /// 打印调试日志
-    static func debugLog(_ str: String) {
-        print("jpjpjp \(str)")
-    }
+    /// 自定义缓存键生成器
+    public static var cacheKeyGenerator: CacheKeyGenerator? = nil
+    public typealias CacheKeyGenerator = (_ svgaSource: String) -> String
     
     private var asyncTag: UUID?
     private var isWillAutoPlay = false
     
     /// SVGA资源路径
-    private(set) var svgaSource: String = ""
+    public private(set) var svgaSource: String = ""
     
     /// SVGA资源
-    private(set) var entity: SVGAVideoEntity?
-    
-    /// 动画时长
-    var duration: TimeInterval { entity?.duration ?? 0 }
-    
-    /// 总帧数
-    var frames: Int { Int(entity?.frames ?? 0) }
-    
-    /// 当前帧
-    private(set) var currFrame: Int = 0
+    public private(set) var entity: SVGAVideoEntity?
     
     /// 当前状态
-    private(set) var status: SVGAParsePlayerStatus = .idle {
+    public private(set) var status: SVGAParsePlayerStatus = .idle {
         didSet {
             guard let myDelegate, status != oldValue else { return }
             myDelegate.svgaParsePlayer?(self, statusDidChanged: status, oldStatus: oldValue)
@@ -137,22 +150,22 @@ class SVGAParsePlayer: SVGAPlayer {
     }
     
     /// 是否正在空闲
-    var isIdle: Bool { status == .idle }
+    public var isIdle: Bool { status == .idle }
     /// 是否正在加载
-    var isLoading: Bool { status == .loading }
+    public var isLoading: Bool { status == .loading }
     /// 是否正在播放
-    var isPlaying: Bool { status == .playing }
+    public var isPlaying: Bool { status == .playing }
     /// 是否已暂停
-    var isPaused: Bool { status == .paused }
+    public var isPaused: Bool { status == .paused }
     /// 是否已停止
-    var isStopped: Bool { status == .stopped }
+    public var isStopped: Bool { status == .stopped }
     
-    /// 是否带动画过渡
+    /// 是否带动画过渡（默认为false）
     /// - 为`true`则会在「更换SVGA」和「播放/停止」的场景中带有淡入淡出的效果
-    var isAnimated = false
+    public var isAnimated = false
     
-    /// 是否在空闲/停止状态时隐藏自身
-    var isHidesWhenStopped = false {
+    /// 是否在【空闲 / 停止】状态时隐藏自身（默认不隐藏）
+    public var isHidesWhenStopped = false {
         didSet {
             if status == .idle || status == .loading || status == .stopped {
                 alpha = isHidesWhenStopped ? 0 : 1
@@ -162,29 +175,111 @@ class SVGAParsePlayer: SVGAPlayer {
         }
     }
     
-    /// 是否启用内存缓存（SVGAParser）
-    var isEnabledMemoryCache = false
+    /// 是否在【停止】时跳至最后一帧（默认跳至起始第一帧）
+    public var isStepToTrailingWhenStopped = false {
+        didSet {
+            guard status == .stopped else { return }
+            step(toFrame: isStepToTrailingWhenStopped ? trailingFrame : leadingFrame)
+        }
+    }
+    
+    /// 是否在【空闲 / 停止】状态时重置`loopCount`（默认为true）
+    public var isResetLoopCountWhenStopped = true
+    
+    /// 是否启用内存缓存（给到SVGAParser使用，默认为false）
+    public var isEnabledMemoryCache = false
     
     /// 代理
-    weak var myDelegate: (any SVGAParsePlayerDelegate)? = nil
+    public weak var myDelegate: (any SVGAParsePlayerDelegate)? = nil
+    
+    /// 是否打印调试日志（仅限DEBUG环境）
+    public var isDebugLog = false
+    
+    /// 调试信息（仅限DEBUG环境）
+    public var debugInfo: String {
+#if DEBUG
+        "[SVGAParsePlayer_Print] svgaSource: \(svgaSource), status: \(status), startFrame: \(startFrame), endFrame: \(endFrame), currentFrame: \(currentFrame), loops: \(loops), loopCount:\(loopCount)"
+#else
+        ""
+#endif
+    }
     
     // MARK: - 初始化
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
         baseSetup()
     }
     
-    required init?(coder: NSCoder) {
+    required public init?(coder: NSCoder) {
         super.init(coder: coder)
         baseSetup()
     }
     
+    public override func willMove(toSuperview newSuperview: UIView?) {
+        let isClear = newSuperview == nil
+        if isClear { asyncTag = nil }
+        
+        super.willMove(toSuperview: newSuperview)
+        
+        if isClear {
+            svgaSource = ""
+            entity = nil
+            videoItem = nil
+            clearDynamicObjects()
+            
+            _debugLog("停止 - 没有父视图了，清空")
+            status = .idle
+        }
+    }
+    
+    deinit {
+        _debugLog("死亡 - \(self)")
+    }
+    
+    // MARK: - 私有方法
     private func baseSetup() {
+        _debugLog("出生 - \(self)")
         delegate = self
+        clearsAfterStop = false
+    }
+    
+    /// 打印调试日志（仅限DEBUG环境）
+    private func _debugLog(_ str: String) {
+#if DEBUG
+        guard isDebugLog else { return }
+        print("[SVGAParsePlayer_Print] \(str)")
+#endif
     }
 }
 
-// MARK: - 开始加载SVGA | SVGA加载失败
+// MARK: - 与父类互斥的属性和方法
+/**
+ * 原代理已被`self`遵守，请使用`myDelegate`来进行监听
+ *  `@property (nonatomic, weak) id<SVGAOptimizedPlayerDelegate> delegate;`
+ *
+ * 无需设置，可在`stop(isClear: Bool)`控制是否清空
+ *  `@property (nonatomic, assign) BOOL clearsAfterStop;`
+ *
+ * 不允许外部设置`videoItem`，内部已为其设置
+ *  `@property (nonatomic, strong, nullable) SVGAVideoEntity *videoItem;`
+ *  `- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem currentFrame:(NSInteger)currentFrame;`
+ *  `- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem startFrame:(NSInteger)startFrame endFrame:(NSInteger)endFrame;`
+ *  `- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem startFrame:(NSInteger)startFrame endFrame:(NSInteger)endFrame currentFrame:(NSInteger)currentFrame;`
+ *
+ * 与原播放逻辑互斥，请使用`play`开头的API进行加载和播放
+ *  `- (BOOL)startAnimation;`
+ *  `- (BOOL)stepToFrame:(NSInteger)frame;`
+ *  `- (BOOL)stepToFrame:(NSInteger)frame andPlay:(BOOL)andPlay;`
+ *
+ * 与原播放逻辑互斥，请使用`pause()`进行暂停
+ *  `- (void)pauseAnimation;`
+ *
+ * 与原播放逻辑互斥，请使用`stop(isClear: Bool)`进行停止
+ *  `- (void)stopAnimation;`
+ *  `- (void)stopAnimation:(BOOL)isClear;`
+ */
+
+// MARK: - 开始加载SVGA | SVGA加载回调
 private extension SVGAParsePlayer {
     func _loadSVGA(_ svgaSource: String, fromFrame: Int, isAutoPlay: Bool) {
         if svgaSource.count == 0 {
@@ -194,29 +289,28 @@ private extension SVGAParsePlayer {
         }
         
         if self.svgaSource == svgaSource, entity != nil {
-            Self.debugLog("已经有了，不用加载 \(svgaSource)")
+            _debugLog("已经有了，不用加载 \(svgaSource)")
             asyncTag = nil
-            _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay)
+            _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay, isNew: false)
             return
         }
         
         // 记录最新状态
-        currFrame = fromFrame
         isWillAutoPlay = isAutoPlay
         
         guard !isLoading else {
-            Self.debugLog("已经在加载了，不要重复加载 \(svgaSource)")
+            _debugLog("已经在加载了，不要重复加载 \(svgaSource)")
             return
         }
         status = .loading
         
-        Self.debugLog("开始加载 \(svgaSource) - 先清空当前动画")
-        stopAnimation()
+        _debugLog("开始加载 \(svgaSource) - 先清空当前动画")
+        stopAnimation(true)
         videoItem = nil
         clearDynamicObjects()
         
         let newTag = UUID()
-        self.asyncTag = newTag
+        asyncTag = newTag
         
         guard let loader = Self.loader else {
             if svgaSource.hasPrefix("http://") || svgaSource.hasPrefix("https://") {
@@ -243,7 +337,7 @@ private extension SVGAParsePlayer {
             let newTag = UUID()
             self.asyncTag = newTag
 
-            Self.debugLog("外部加载SVGA - 成功 \(svgaSource)")
+            self._debugLog("外部加载SVGA - 成功 \(svgaSource)")
             self._parseFromData(data, svgaSource, newTag, isAutoPlay)
         }
     }
@@ -253,7 +347,7 @@ private extension SVGAParsePlayer {
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
 
-            Self.debugLog("外部加载SVGA - 失败 \(svgaSource)")
+            self._debugLog("外部加载SVGA - 失败 \(svgaSource)")
             self._stopSVGA(isClear: true)
             self._failedHandler(.dataLoadFailed(svgaSource, error))
         }
@@ -274,6 +368,9 @@ private extension SVGAParsePlayer {
             
         case let .assetParseFailed(s, e):
             myDelegate.svgaParsePlayer?(self, svga: s, assetParseFailed: e)
+            
+        case let .entityInvalid(s, entity, error):
+            myDelegate.svgaParsePlayer?(self, svga: s, entity: entity, invalid: error)
         }
     }
 }
@@ -308,27 +405,27 @@ private extension SVGAParsePlayer {
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("内部下载远程SVGA - 成功 \(svgaSource)")
+            self._debugLog("内部下载远程SVGA - 成功 \(svgaSource)")
             
             if let entity {
-                self._parseDone(svgaSource, entity)
+                if self._checkEntityIsCanUse(entity, for: svgaSource) {
+                    self._parseDone(svgaSource, entity)
+                }
                 return
             }
             
-            Self.debugLog("内部下载远程SVGA - 资源为空")
+            let error = NSError(domain: "SVGAParsePlayer", code: -3, userInfo: [NSLocalizedDescriptionKey: "下载的SVGA资源为空"])
+            self._debugLog("内部下载远程SVGA - 资源为空")
             self._stopSVGA(isClear: true)
-            
-            let error = NSError(domain: "SVGAParsePlayer", code: -3, userInfo: [NSLocalizedDescriptionKey: "SVGA资源为空"])
             self._failedHandler(.dataLoadFailed(svgaSource, error))
             
         } failureBlock: { [weak self] e in
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("内部下载远程SVGA - 失败 \(svgaSource)")
-            self._stopSVGA(isClear: true)
-            
             let error = e ?? NSError(domain: "SVGAParsePlayer", code: -2, userInfo: [NSLocalizedDescriptionKey: "SVGA下载失败"])
+            self._debugLog("内部下载远程SVGA - 失败 \(svgaSource)")
+            self._stopSVGA(isClear: true)
             self._failedHandler(.dataLoadFailed(svgaSource, error))
         }
     }
@@ -337,20 +434,22 @@ private extension SVGAParsePlayer {
                         _ svgaSource: String,
                         _ asyncTag: UUID,
                         _ isAutoPlay: Bool) {
+        let cacheKey = Self.cacheKeyGenerator?(svgaSource) ?? svgaSource
         let parser = SVGAParser()
         parser.enabledMemoryCache = isEnabledMemoryCache
-        parser.parse(with: data, cacheKey: svgaSource.md5) { [weak self] entity in
+        parser.parse(with: data, cacheKey: cacheKey) { [weak self] entity in
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("解析远程SVGA - 成功 \(svgaSource)")
+            self._debugLog("解析远程SVGA - 成功 \(svgaSource)")
+            guard self._checkEntityIsCanUse(entity, for: svgaSource) else { return }
             self._parseDone(svgaSource, entity)
             
         } failureBlock: { [weak self] error in
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("解析远程SVGA - 失败 \(svgaSource) \(error)")
+            self._debugLog("解析远程SVGA - 失败 \(svgaSource) \(error)")
             self._stopSVGA(isClear: true)
             self._failedHandler(.dataParseFailed(svgaSource, error))
         }
@@ -365,14 +464,15 @@ private extension SVGAParsePlayer {
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("解析本地SVGA - 成功 \(svgaSource)")
+            self._debugLog("解析本地SVGA - 成功 \(svgaSource)")
+            guard self._checkEntityIsCanUse(entity, for: svgaSource) else { return }
             self._parseDone(svgaSource, entity)
             
         } failureBlock: { [weak self] error in
             guard let self, self.asyncTag == asyncTag else { return }
             self.asyncTag = nil
             
-            Self.debugLog("解析本地SVGA - 失败 \(svgaSource) \(error)")
+            self._debugLog("解析本地SVGA - 失败 \(svgaSource) \(error)")
             self._stopSVGA(isClear: true)
             self._failedHandler(.assetParseFailed(svgaSource, error))
         }
@@ -383,21 +483,52 @@ private extension SVGAParsePlayer {
         self.entity = entity
         videoItem = entity
         myDelegate?.svgaParsePlayer?(self, svga: svgaSource, parseDone: entity)
-        _playSVGA(fromFrame: currFrame, isAutoPlay: isWillAutoPlay)
+        _playSVGA(fromFrame: currentFrame, isAutoPlay: isWillAutoPlay, isNew: true)
+    }
+}
+
+// MARK: - 检查Entity
+private extension SVGAParsePlayer {
+    func _checkEntityIsCanUse(_ entity: SVGAVideoEntity, for svgaSource: String) -> Bool {
+        let error: NSError
+        switch Self.checkVideoItem(entity) {
+        case .none: 
+            return true
+        case .zeroVideoSize:
+            error = NSError(domain: "SVGAParsePlayer", code: -4, userInfo: [NSLocalizedDescriptionKey: "SVGA资源无效：画面尺寸为0"])
+        case .zeroFPS:
+            error = NSError(domain: "SVGAParsePlayer", code: -5, userInfo: [NSLocalizedDescriptionKey: "SVGA资源无效：FPS为0"])
+        case .zeroFrames:
+            error = NSError(domain: "SVGAParsePlayer", code: -6, userInfo: [NSLocalizedDescriptionKey: "SVGA资源无效：帧数为0"])
+        @unknown default:
+            error = NSError(domain: "SVGAParsePlayer", code: -7, userInfo: [NSLocalizedDescriptionKey: "SVGA资源无效：其他原因"])
+        }
+        
+        _debugLog(error.localizedDescription)
+        _stopSVGA(isClear: true)
+        _failedHandler(.entityInvalid(svgaSource, entity, error))
+        return false
     }
 }
 
 // MARK: - 播放 | 停止
 private extension SVGAParsePlayer {
-    func _playSVGA(fromFrame: Int, isAutoPlay: Bool) {
-        currFrame = fromFrame
+    func _playSVGA(fromFrame: Int, isAutoPlay: Bool, isNew: Bool) {
+        if isNew {
+            myDelegate?.svgaParsePlayer?(self, svga: svgaSource, readyForPlay: isAutoPlay)
+        }
         
-        step(toFrame: fromFrame, andPlay: isAutoPlay)
-        if isAutoPlay {
-            Self.debugLog("跳至特定帧\(fromFrame) - 播放 \(svgaSource)")
-            status = .playing
+        if step(toFrame: fromFrame, andPlay: isAutoPlay) {
+            if isAutoPlay {
+                _debugLog("成功跳至特定帧\(fromFrame) - 播放 \(svgaSource)")
+                status = .playing
+            } else {
+                _debugLog("成功跳至特定帧\(fromFrame) - 暂停 \(svgaSource)")
+                status = .paused
+            }
         } else {
-            Self.debugLog("跳至特定帧\(fromFrame) - 暂停 \(svgaSource)")
+            _debugLog("不能跳至特定帧\(fromFrame) - 暂停 \(svgaSource)")
+            pauseAnimation()
             status = .paused
         }
         
@@ -406,8 +537,11 @@ private extension SVGAParsePlayer {
     
     func _stopSVGA(isClear: Bool) {
         asyncTag = nil
-        stopAnimation()
-        currFrame = 0
+        stopAnimation(isClear)
+        
+        if isResetLoopCountWhenStopped || isClear {
+            resetLoopCount()
+        }
         
         if isClear {
             svgaSource = ""
@@ -415,10 +549,11 @@ private extension SVGAParsePlayer {
             videoItem = nil
             clearDynamicObjects()
             
-            Self.debugLog("停止 - 清空")
+            _debugLog("停止 - 清空")
             status = .idle
         } else {
-            Self.debugLog("停止 - 不清空")
+            _debugLog("停止 - 不清空，回到开头/结尾处")
+            step(toFrame: isStepToTrailingWhenStopped ? trailingFrame : leadingFrame)
             status = .stopped
         }
     }
@@ -456,26 +591,29 @@ private extension SVGAParsePlayer {
     }
 }
 
-// MARK: - <SVGAPlayerDelegate>
-extension SVGAParsePlayer: SVGAPlayerDelegate {
-    func svgaPlayer(_ player: SVGAPlayer!, didAnimatedToFrame frame: Int) {
-        currFrame = frame
-        myDelegate?.svgaParsePlayer?(self, svga: svgaSource, didAnimatedToFrame: frame)
+// MARK: - <SVGAOptimizedPlayerDelegate>
+extension SVGAParsePlayer: SVGAOptimizedPlayerDelegate {
+    public func svgaPlayerDidAnimating(_ player: SVGAOptimizedPlayer) {
+        myDelegate?.svgaParsePlayer?(self, svga: svgaSource, didAnimatingToFrame: currentFrame)
     }
     
-    func svgaPlayerDidFinishedAnimation(_ player: SVGAPlayer!) {
+    public func svgaPlayerDidFinishedOnceAnimation(_ player: SVGAOptimizedPlayer) {
+        myDelegate?.svgaParsePlayer?(self, svga: svgaSource, didFinishedOnceAnimation: loopCount)
+    }
+    
+    public func svgaPlayerDidFinishedAllAnimation(_ player: SVGAOptimizedPlayer) {
         let svgaSource = self.svgaSource
+        _debugLog("did finished all: \(svgaSource)")
         _hideIfNeeded { [weak self] in
             guard let self else { return }
             self._stopSVGA(isClear: false)
-            self.myDelegate?.svgaParsePlayer?(self, svga: svgaSource, didFinishedAnimation: false)
+            self.myDelegate?.svgaParsePlayer?(self, svga: svgaSource, didFinishedAllAnimation: false)
         }
-        Self.debugLog("svgaPlayerDidFinishedAnimation！！！")
     }
 }
 
 // MARK: - API
-extension SVGAParsePlayer {
+public extension SVGAParsePlayer {
     /// 播放目标SVGA
     /// - Parameters:
     ///   - svgaSource: SVGA资源路径
@@ -499,10 +637,11 @@ extension SVGAParsePlayer {
     }
     
     /// 播放目标SVGA（从头开始、自动播放）
+    /// 如果设置过`startFrame`或`endFrame`，则从`leadingFrame`开始
     /// - Parameters:
     ///   - svgaSource: SVGA资源路径
     func play(_ svgaSource: String) {
-        play(svgaSource, fromFrame: 0, isAutoPlay: true)
+        play(svgaSource, fromFrame: leadingFrame, isAutoPlay: true)
     }
     
     /// 播放目标SVGA
@@ -513,9 +652,12 @@ extension SVGAParsePlayer {
     func play(with entity: SVGAVideoEntity, fromFrame: Int, isAutoPlay: Bool) {
         asyncTag = nil
         
-        let svgaSource = entity.memoryAddress
+        let memoryAddress = unsafeBitCast(entity, to: Int.self)
+        let svgaSource = String(format: "%p", memoryAddress)
+        guard _checkEntityIsCanUse(entity, for: svgaSource) else { return }
+        
         guard self.svgaSource != svgaSource else {
-            _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay)
+            _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay, isNew: false)
             return
         }
         
@@ -526,35 +668,37 @@ extension SVGAParsePlayer {
         _hideIfNeeded { [weak self] in
             guard let self else { return }
             
-            self.stopAnimation()
-            self.videoItem = nil
+            self.stopAnimation(true)
             self.clearDynamicObjects()
             
             self.entity = entity
             self.videoItem = entity
             
-            self._playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay)
+            self._playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay, isNew: true)
         }
     }
     
     /// 播放目标SVGA（从头开始、自动播放）
+    /// 如果设置过`startFrame`或`endFrame`，则从`leadingFrame`开始
     /// - Parameters:
     ///   - entity: SVGA资源（`svgaSource`为`entity`的内存地址）
     func play(with entity: SVGAVideoEntity) {
-        play(with: entity, fromFrame: 0, isAutoPlay: true)
+        play(with: entity, fromFrame: leadingFrame, isAutoPlay: true)
     }
     
     /// 播放当前SVGA（从当前所在帧开始）
     func play() {
         switch status {
         case .paused:
-            Self.debugLog("继续")
-            startAnimation()
-            status = .playing
-        case .playing:
-            return
-        default:
-            play(fromFrame: currFrame, isAutoPlay: true)
+            if startAnimation() {
+                _debugLog("继续播放")
+                status = .playing
+            } else {
+                _debugLog("播放失败，继续暂停")
+                pauseAnimation()
+            }
+        case .playing: return
+        default: play(fromFrame: currentFrame, isAutoPlay: true)
         }
     }
     
@@ -566,34 +710,35 @@ extension SVGAParsePlayer {
         guard svgaSource.count > 0 else { return }
         
         if entity == nil {
-            Self.debugLog("播放 - 需要加载")
+            _debugLog("播放 - 需要加载")
             _loadSVGA(svgaSource, fromFrame: fromFrame, isAutoPlay: isAutoPlay)
             return
         }
         
-        Self.debugLog("播放 - 无需加载 继续")
-        _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay)
+        _debugLog("播放 - 无需加载 继续")
+        _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay, isNew: false)
     }
     
     /// 重置当前SVGA（回到开头）
+    /// 如果设置过`startFrame`或`endFrame`，则从`leadingFrame`开始
     /// - Parameters:
     ///   - isAutoPlay: 是否自动开始播放
     func reset(isAutoPlay: Bool = true) {
         guard svgaSource.count > 0 else { return }
         
         if entity == nil {
-            Self.debugLog("重播 - 需要加载")
-            _loadSVGA(svgaSource, fromFrame: 0, isAutoPlay: isAutoPlay)
+            _debugLog("重播 - 需要加载")
+            _loadSVGA(svgaSource, fromFrame: leadingFrame, isAutoPlay: isAutoPlay)
             return
         }
         
-        Self.debugLog("重播 - 无需加载")
-        _playSVGA(fromFrame: 0, isAutoPlay: isAutoPlay)
+        _debugLog("重播 - 无需加载")
+        _playSVGA(fromFrame: leadingFrame, isAutoPlay: isAutoPlay, isNew: false)
     }
     
     /// 暂停
     func pause() {
-        Self.debugLog("暂停")
+        _debugLog("暂停")
         guard isPlaying else {
             isWillAutoPlay = false
             return
@@ -610,7 +755,7 @@ extension SVGAParsePlayer {
         _hideIfNeeded { [weak self] in
             guard let self else { return }
             self._stopSVGA(isClear: isClear)
-            self.myDelegate?.svgaParsePlayer?(self, svga: svgaSource, didFinishedAnimation: true)
+            self.myDelegate?.svgaParsePlayer?(self, svga: svgaSource, didFinishedAllAnimation: true)
         }
     }
 }

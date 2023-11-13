@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		002AEC052B0211D5006F9E5E /* SVGAParsePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002AEC022B0211D5006F9E5E /* SVGAParsePlayer.swift */; };
+		002AEC072B0211D5006F9E5E /* SVGAOptimizedPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 002AEC042B0211D5006F9E5E /* SVGAOptimizedPlayer.m */; };
 		009F1D632A95FC80009C9FF4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009F1D622A95FC80009C9FF4 /* AppDelegate.swift */; };
 		009F1D652A95FC80009C9FF4 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009F1D642A95FC80009C9FF4 /* SceneDelegate.swift */; };
 		009F1D672A95FC80009C9FF4 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009F1D662A95FC80009C9FF4 /* ViewController.swift */; };
 		009F1D6A2A95FC80009C9FF4 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 009F1D682A95FC80009C9FF4 /* Main.storyboard */; };
 		009F1D6C2A95FC81009C9FF4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 009F1D6B2A95FC81009C9FF4 /* Assets.xcassets */; };
 		009F1D6F2A95FC81009C9FF4 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 009F1D6D2A95FC81009C9FF4 /* LaunchScreen.storyboard */; };
-		009F1D782A95FD51009C9FF4 /* SVGAParsePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009F1D772A95FD51009C9FF4 /* SVGAParsePlayer.swift */; };
-		009F1D7A2A95FD61009C9FF4 /* SVGAParsePlayer+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009F1D792A95FD61009C9FF4 /* SVGAParsePlayer+.swift */; };
 		009F1D802A9608E0009C9FF4 /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009F1D7F2A9608E0009C9FF4 /* Extension.swift */; };
 		009F1D922A961699009C9FF4 /* Rocket.svga in Resources */ = {isa = PBXBuildFile; fileRef = 009F1D882A961699009C9FF4 /* Rocket.svga */; };
 		009F1D932A961699009C9FF4 /* heartbeat.svga in Resources */ = {isa = PBXBuildFile; fileRef = 009F1D892A961699009C9FF4 /* heartbeat.svga */; };
@@ -25,6 +25,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		002AEC012B0211D5006F9E5E /* SVGAOptimizedPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVGAOptimizedPlayer.h; sourceTree = "<group>"; };
+		002AEC022B0211D5006F9E5E /* SVGAParsePlayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SVGAParsePlayer.swift; sourceTree = "<group>"; };
+		002AEC042B0211D5006F9E5E /* SVGAOptimizedPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVGAOptimizedPlayer.m; sourceTree = "<group>"; };
+		002AEC082B0211ED006F9E5E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = SVGAParsePlayer_Demo/SVGAParsePlayer/README.md; sourceTree = "<group>"; };
 		009F1D5F2A95FC80009C9FF4 /* SVGAParsePlayer_Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SVGAParsePlayer_Demo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		009F1D622A95FC80009C9FF4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		009F1D642A95FC80009C9FF4 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -33,16 +37,14 @@
 		009F1D6B2A95FC81009C9FF4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		009F1D6E2A95FC81009C9FF4 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		009F1D702A95FC81009C9FF4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		009F1D772A95FD51009C9FF4 /* SVGAParsePlayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SVGAParsePlayer.swift; sourceTree = "<group>"; };
-		009F1D792A95FD61009C9FF4 /* SVGAParsePlayer+.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SVGAParsePlayer+.swift"; sourceTree = "<group>"; };
 		009F1D7F2A9608E0009C9FF4 /* Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extension.swift; sourceTree = "<group>"; };
 		009F1D882A961699009C9FF4 /* Rocket.svga */ = {isa = PBXFileReference; lastKnownFileType = file; path = Rocket.svga; sourceTree = "<group>"; };
 		009F1D892A961699009C9FF4 /* heartbeat.svga */ = {isa = PBXFileReference; lastKnownFileType = file; path = heartbeat.svga; sourceTree = "<group>"; };
 		009F1D8B2A961699009C9FF4 /* Goddess.svga */ = {isa = PBXFileReference; lastKnownFileType = file; path = Goddess.svga; sourceTree = "<group>"; };
 		009F1D8D2A961699009C9FF4 /* Rose.svga */ = {isa = PBXFileReference; lastKnownFileType = file; path = Rose.svga; sourceTree = "<group>"; };
 		009F1D9A2A96213B009C9FF4 /* Constant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constant.swift; sourceTree = "<group>"; };
-		009F1D9E2A96351D009C9FF4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		19225488E0EFB6221E4479D1 /* Pods-SVGAParsePlayer_Demo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SVGAParsePlayer_Demo.release.xcconfig"; path = "Target Support Files/Pods-SVGAParsePlayer_Demo/Pods-SVGAParsePlayer_Demo.release.xcconfig"; sourceTree = "<group>"; };
+		1ACE10AC2B0007AE003881D3 /* SVGAParsePlayer_Demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SVGAParsePlayer_Demo-Bridging-Header.h"; sourceTree = "<group>"; };
 		30E4AB3159702A3C9C6E1513 /* Pods_SVGAParsePlayer_Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SVGAParsePlayer_Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		84722344303371C7A79C365F /* Pods-SVGAParsePlayer_Demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SVGAParsePlayer_Demo.debug.xcconfig"; path = "Target Support Files/Pods-SVGAParsePlayer_Demo/Pods-SVGAParsePlayer_Demo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -59,10 +61,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		002AEC002B0211D5006F9E5E /* SVGAParsePlayer */ = {
+			isa = PBXGroup;
+			children = (
+				002AEC012B0211D5006F9E5E /* SVGAOptimizedPlayer.h */,
+				002AEC042B0211D5006F9E5E /* SVGAOptimizedPlayer.m */,
+				002AEC022B0211D5006F9E5E /* SVGAParsePlayer.swift */,
+			);
+			path = SVGAParsePlayer;
+			sourceTree = "<group>";
+		};
 		009F1D562A95FC80009C9FF4 = {
 			isa = PBXGroup;
 			children = (
-				009F1D9E2A96351D009C9FF4 /* README.md */,
+				002AEC082B0211ED006F9E5E /* README.md */,
 				009F1D612A95FC80009C9FF4 /* SVGAParsePlayer_Demo */,
 				009F1D602A95FC80009C9FF4 /* Products */,
 				463DEB6219AC9D58E1AD5CA2 /* Pods */,
@@ -81,7 +93,7 @@
 		009F1D612A95FC80009C9FF4 /* SVGAParsePlayer_Demo */ = {
 			isa = PBXGroup;
 			children = (
-				009F1D762A95FD49009C9FF4 /* SVGAParsePlayer */,
+				002AEC002B0211D5006F9E5E /* SVGAParsePlayer */,
 				009F1D852A961699009C9FF4 /* Samples */,
 				009F1D622A95FC80009C9FF4 /* AppDelegate.swift */,
 				009F1D642A95FC80009C9FF4 /* SceneDelegate.swift */,
@@ -92,17 +104,9 @@
 				009F1D6B2A95FC81009C9FF4 /* Assets.xcassets */,
 				009F1D6D2A95FC81009C9FF4 /* LaunchScreen.storyboard */,
 				009F1D702A95FC81009C9FF4 /* Info.plist */,
+				1ACE10AC2B0007AE003881D3 /* SVGAParsePlayer_Demo-Bridging-Header.h */,
 			);
 			path = SVGAParsePlayer_Demo;
-			sourceTree = "<group>";
-		};
-		009F1D762A95FD49009C9FF4 /* SVGAParsePlayer */ = {
-			isa = PBXGroup;
-			children = (
-				009F1D772A95FD51009C9FF4 /* SVGAParsePlayer.swift */,
-				009F1D792A95FD61009C9FF4 /* SVGAParsePlayer+.swift */,
-			);
-			path = SVGAParsePlayer;
 			sourceTree = "<group>";
 		};
 		009F1D852A961699009C9FF4 /* Samples */ = {
@@ -167,7 +171,7 @@
 				TargetAttributes = {
 					009F1D5E2A95FC80009C9FF4 = {
 						CreatedOnToolsVersion = 14.3.1;
-						LastSwiftMigration = 1430;
+						LastSwiftMigration = 1500;
 					};
 				};
 			};
@@ -254,12 +258,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				009F1D672A95FC80009C9FF4 /* ViewController.swift in Sources */,
-				009F1D782A95FD51009C9FF4 /* SVGAParsePlayer.swift in Sources */,
 				009F1D632A95FC80009C9FF4 /* AppDelegate.swift in Sources */,
 				009F1D652A95FC80009C9FF4 /* SceneDelegate.swift in Sources */,
-				009F1D7A2A95FD61009C9FF4 /* SVGAParsePlayer+.swift in Sources */,
 				009F1D802A9608E0009C9FF4 /* Extension.swift in Sources */,
+				002AEC072B0211D5006F9E5E /* SVGAOptimizedPlayer.m in Sources */,
 				009F1D9B2A96213B009C9FF4 /* Constant.swift in Sources */,
+				002AEC052B0211D5006F9E5E /* SVGAParsePlayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -421,13 +425,13 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.zhoujianping.SVGAParsePlayer-Demo";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhoujianping.SVGAParsePlayer_Demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "SVGAParsePlayer_Demo/SVGAParsePlayer_Demo-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -456,13 +460,13 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.zhoujianping.SVGAParsePlayer-Demo";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhoujianping.SVGAParsePlayer_Demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "SVGAParsePlayer_Demo/SVGAParsePlayer_Demo-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};

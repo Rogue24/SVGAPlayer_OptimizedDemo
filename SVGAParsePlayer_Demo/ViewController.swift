@@ -14,11 +14,13 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         setupOperationBar()
         setupPlayer()
         
         setupLoader()
         setupDownloader()
+        setupCacheKeyGenerator()
         
         writeBundleDataToCache("Rocket")
         writeBundleDataToCache("Rose")
@@ -86,6 +88,11 @@ extension ViewController: SVGAParsePlayerDelegate {
     }
     
     func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, assetParseFailed error: Error) {
+        SVProgressHUD.setDefaultMaskType(.none)
+        SVProgressHUD.showError(withStatus: error.localizedDescription)
+    }
+    
+    func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, entity: SVGAVideoEntity, invalid error: Error) {
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showError(withStatus: error.localizedDescription)
     }
@@ -171,10 +178,13 @@ private extension ViewController {
     }
     
     func setupPlayer() {
+        let bottomInset = NavBarH + NavBarH + DiffTabBarH
+        let height = PortraitScreenHeight - StatusBarH - bottomInset
+        player.frame = CGRect(x: 0, y: StatusBarH, width: PortraitScreenWidth, height: height)
         player.contentMode = .scaleAspectFit
-        player.frame = CGRect(x: 0, y: StatusBarH, width: PortraitScreenWidth, height: PortraitScreenHeight - StatusBarH - (NavBarH + NavBarH + DiffTabBarH))
         view.addSubview(player)
         
+        player.isDebugLog = true
         player.isAnimated = true
         player.isHidesWhenStopped = true
         player.myDelegate = self
@@ -217,6 +227,10 @@ private extension ViewController {
                 }
             }
         }
+    }
+    
+    func setupCacheKeyGenerator() {
+        SVGAParsePlayer.cacheKeyGenerator = { $0.md5 }
     }
     
     func writeBundleDataToCache(_ resName: String) {
