@@ -263,6 +263,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
         _JPLog(@"[%p] SVGA资源有问题：frames是0！", self);
         return SVGAVideoEntityError_ZeroFrames;
     }
+//    _JPLog(@"[%p] SVGA资源没问题！", self);
     return SVGAVideoEntityError_None;
 }
 
@@ -289,7 +290,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     if (_videoItem == nil && videoItem == nil) return;
     [self stopAnimation:YES];
     
-    if ([SVGAOptimizedPlayer checkVideoItem:videoItem] == SVGAVideoEntityError_None) {
+    if (self.superview && videoItem && [SVGAOptimizedPlayer checkVideoItem:videoItem] == SVGAVideoEntityError_None) {
         _videoItem = videoItem;
     } else {
         _videoItem = nil;
