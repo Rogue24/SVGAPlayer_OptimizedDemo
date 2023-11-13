@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import SVGAPlayer
 
 @objc public
 protocol SVGAParsePlayerDelegate: NSObjectProtocol {
@@ -408,9 +407,7 @@ private extension SVGAParsePlayer {
             self._debugLog("内部下载远程SVGA - 成功 \(svgaSource)")
             
             if let entity {
-                if self._checkEntityIsCanUse(entity, for: svgaSource) {
-                    self._parseDone(svgaSource, entity)
-                }
+                self._parseDone(svgaSource, entity)
                 return
             }
             
@@ -442,7 +439,6 @@ private extension SVGAParsePlayer {
             self.asyncTag = nil
             
             self._debugLog("解析远程SVGA - 成功 \(svgaSource)")
-            guard self._checkEntityIsCanUse(entity, for: svgaSource) else { return }
             self._parseDone(svgaSource, entity)
             
         } failureBlock: { [weak self] error in
@@ -465,7 +461,6 @@ private extension SVGAParsePlayer {
             self.asyncTag = nil
             
             self._debugLog("解析本地SVGA - 成功 \(svgaSource)")
-            guard self._checkEntityIsCanUse(entity, for: svgaSource) else { return }
             self._parseDone(svgaSource, entity)
             
         } failureBlock: { [weak self] error in
@@ -479,6 +474,7 @@ private extension SVGAParsePlayer {
     }
     
     func _parseDone(_ svgaSource: String, _ entity: SVGAVideoEntity) {
+        guard _checkEntityIsCanUse(entity, for: svgaSource) else { return }
         guard self.svgaSource == svgaSource else { return }
         self.entity = entity
         videoItem = entity
