@@ -370,17 +370,13 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 #pragma mark 开始播放
 - (BOOL)startAnimation {
-    [self stopAnimation:NO];
-    
     if (self.videoItem == nil) {
         _JPLog(@"[%p] videoItem是空的", self);
+        [self stopAnimation:YES];
         return NO;
     }
     
-    if (self.superview == nil) {
-        _JPLog(@"[%p] superview是空的", self);
-        return NO;
-    }
+    [self stopAnimation:NO];
     
     if (self.isFinishedAll) {
         _loopCount = 0;
@@ -401,9 +397,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     _currentFrame = frame;
     
     [self __resetDrawLayerIfNeed:isNeedUpdate];
-    [self __addLink];
-    
-    return YES;
+    return [self __addLink];
 }
 
 #pragma mark 跳至指定帧
@@ -411,17 +405,13 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     return [self stepToFrame:frame andPlay:NO];
 }
 - (BOOL)stepToFrame:(NSInteger)frame andPlay:(BOOL)andPlay {
-    [self stopAnimation:NO];
-    
     if (self.videoItem == nil) {
         _JPLog(@"[%p] videoItem是空的", self);
+        [self stopAnimation:YES];
         return NO;
     }
     
-    if (self.superview == nil) {
-        _JPLog(@"[%p] superview是空的", self);
-        return NO;
-    }
+    [self stopAnimation:NO];
     
     if (self.isFinishedAll) {
         _loopCount = 0;
@@ -439,11 +429,11 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     _currentFrame = frame;
     
     [self __resetDrawLayerIfNeed:isNeedUpdate];
-    if (andPlay) {
-        [self __addLink];
+    if (!andPlay) {
+        _JPLog(@"[%p] 已跳至第%zd帧，并且不自动播放", self, frame);
+        return NO;
     }
-    
-    return YES;
+    return [self __addLink];
 }
 
 #pragma mark 暂停播放
@@ -677,12 +667,19 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 #pragma mark - Display Link
 
-- (void)__addLink {
+- (BOOL)__addLink {
     [self __removeLink];
+    
+    if (self.superview == nil) {
+        _JPLog(@"[%p] superview是空的，无法播放/开启定时器", self);
+        return NO;
+    }
+    
 //    _JPLog(@"[%p] 开启定时器，此时startFrame: %zd, endFrame: %zd, currentFrame: %zd, loopCount: %zd", self, self.startFrame, self.endFrame, self.currentFrame, self.loopCount);
     self.displayLink = [CADisplayLink displayLinkWithTarget:[_JPProxy proxyWithTarget:self] selector:@selector(__next)];
     self.displayLink.preferredFramesPerSecond = self.videoItem.FPS;
     [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:self.mainRunLoopMode];
+    return YES;
 }
 
 - (void)__removeLink {
