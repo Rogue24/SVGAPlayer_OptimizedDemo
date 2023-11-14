@@ -19,6 +19,8 @@ typedef NS_ENUM(NSUInteger, SVGAVideoEntityError) {
     SVGAVideoEntityError_ZeroFrames = 3,
 };
 
+typedef void(^kDynamicDrawingBlock)(CALayer *contentLayer, NSInteger frameIndex);
+
 @protocol SVGAOptimizedPlayerDelegate <NSObject>
 @optional
 /// 正在播放的回调
@@ -107,10 +109,9 @@ typedef NS_ENUM(NSUInteger, SVGAVideoEntityError) {
 - (void)stopAnimation:(BOOL)isClear;
 
 #pragma mark - Dynamic Object
-- (void)setImage:(UIImage *)image forKey:(NSString *)aKey;
-- (void)setImageWithURL:(NSURL *)URL forKey:(NSString *)aKey;
-- (void)setImage:(UIImage *)image forKey:(NSString *)aKey referenceLayer:(CALayer *)referenceLayer; // deprecated from 2.0.1
-- (void)setAttributedText:(NSAttributedString *)attributedText forKey:(NSString *)aKey;
+- (void)setImage:(nullable UIImage *)image forKey:(NSString *)aKey;
+- (void)setAttributedText:(nullable NSAttributedString *)attributedText forKey:(NSString *)aKey;
+- (void)setDrawingBlock:(nullable kDynamicDrawingBlock)drawingBlock forKey:(NSString *)aKey;
 - (void)setHidden:(BOOL)hidden forKey:(NSString *)aKey;
 - (void)clearDynamicObjects;
 @end

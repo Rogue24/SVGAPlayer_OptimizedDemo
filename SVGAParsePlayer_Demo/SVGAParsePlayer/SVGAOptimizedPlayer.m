@@ -91,9 +91,10 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 @property (nonatomic, copy) NSArray<SVGAContentLayer *> *contentLayers;
 @property (nonatomic, copy) NSArray<SVGAAudioLayer *> *audioLayers;
 
-@property (nonatomic, copy) NSDictionary<NSString *, UIImage *> *dynamicObjects;
-@property (nonatomic, copy) NSDictionary<NSString *, NSAttributedString *> *dynamicTexts;
-@property (nonatomic, copy) NSDictionary<NSString *, NSNumber *> *dynamicHiddens;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, UIImage *> *dynamicObjects;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSAttributedString *> *dynamicTexts;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, kDynamicDrawingBlock> *dynamicDrawings;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *> *dynamicHiddens;
 
 @property (nonatomic, strong) CADisplayLink *displayLink;
 @end
@@ -500,23 +501,25 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     NSMutableDictionary *tempHostLayers = [NSMutableDictionary dictionary];
     NSMutableArray *tempContentLayers = [NSMutableArray array];
     [self.videoItem.sprites enumerateObjectsUsingBlock:^(SVGAVideoSpriteEntity * _Nonnull sprite, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSString *imageKey = sprite.imageKey;
+        
         UIImage *bitmap;
-        if (sprite.imageKey != nil) {
-            NSString *bitmapKey = [sprite.imageKey stringByDeletingPathExtension];
-            if (self.dynamicObjects[bitmapKey] != nil) {
+        if (imageKey != nil) {
+            NSString *bitmapKey = [imageKey stringByDeletingPathExtension];
+            if (_dynamicObjects[bitmapKey] != nil) {
                 bitmap = self.dynamicObjects[bitmapKey];
-            }
-            else {
+            } else {
                 bitmap = self.videoItem.images[bitmapKey];
             }
         }
         SVGAContentLayer *contentLayer = [sprite requestLayerWithBitmap:bitmap];
-        contentLayer.imageKey = sprite.imageKey;
+        contentLayer.imageKey = imageKey;
         [tempContentLayers addObject:contentLayer];
-        if ([sprite.imageKey hasSuffix:@".matte"]) {
+        
+        if ([imageKey hasSuffix:@".matte"]) {
             CALayer *hostLayer = [[CALayer alloc] init];
             hostLayer.mask = contentLayer;
-            tempHostLayers[sprite.imageKey] = hostLayer;
+            tempHostLayers[imageKey] = hostLayer;
         } else {
             if (sprite.matteKey && sprite.matteKey.length > 0) {
                 CALayer *hostLayer = tempHostLayers[sprite.matteKey];
@@ -528,24 +531,28 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
                 [self.drawLayer addSublayer:contentLayer];
             }
         }
-        if (sprite.imageKey != nil) {
-            if (self.dynamicTexts[sprite.imageKey] != nil) {
-                NSAttributedString *text = self.dynamicTexts[sprite.imageKey];
-                CGSize bitmapSize = CGSizeMake(self.videoItem.images[sprite.imageKey].size.width * self.videoItem.images[sprite.imageKey].scale, self.videoItem.images[sprite.imageKey].size.height * self.videoItem.images[sprite.imageKey].scale);
-                CGSize size = [text boundingRectWithSize:bitmapSize
-                                                 options:NSStringDrawingUsesLineFragmentOrigin
-                                                 context:NULL].size;
+        
+        if (imageKey != nil) {
+            if (_dynamicTexts[imageKey] != nil) {
+                NSAttributedString *text = self.dynamicTexts[imageKey];
+                UIImage *kBitmap = self.videoItem.images[imageKey];
+                CGSize bitmapSize = CGSizeMake(kBitmap.size.width * kBitmap.scale, kBitmap.size.height * kBitmap.scale);
+                CGSize size = [text boundingRectWithSize:bitmapSize options:NSStringDrawingUsesLineFragmentOrigin context:nil].size;
                 CATextLayer *textLayer = [CATextLayer layer];
-                textLayer.contentsScale = [[UIScreen mainScreen] scale];
-                [textLayer setString:self.dynamicTexts[sprite.imageKey]];
+                textLayer.contentsScale = UIScreen.mainScreen.scale;
                 textLayer.frame = CGRectMake(0, 0, size.width, size.height);
+                textLayer.string = text;
                 [contentLayer addSublayer:textLayer];
                 contentLayer.textLayer = textLayer;
                 [contentLayer resetTextLayerProperties:text];
             }
-            if (self.dynamicHiddens[sprite.imageKey] != nil &&
-                [self.dynamicHiddens[sprite.imageKey] boolValue] == YES) {
-                contentLayer.dynamicHidden = YES;
+            
+            if (_dynamicDrawings[imageKey] != nil) {
+                contentLayer.dynamicDrawingBlock = self.dynamicDrawings[imageKey];
+            }
+            
+            if (_dynamicHiddens[imageKey] != nil) {
+                contentLayer.dynamicHidden = [self.dynamicHiddens[imageKey] boolValue];
             }
         }
     }];
@@ -574,7 +581,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }
     [CATransaction setDisableActions:NO];
     
-    // 反转时、停止时 不播放音频
+    // 反转时、停止时，不播放音频
     if (!self.isReversing && self.isAnimating && self.audioLayers.count > 0) {
         for (SVGAAudioLayer *layer in self.audioLayers) {
             if (!layer.audioPlaying && layer.audioItem.startFrame <= self.currentFrame && self.currentFrame <= layer.audioItem.endFrame) {
@@ -742,109 +749,110 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 #pragma mark - Dynamic Object
 
+- (NSMutableDictionary *)dynamicObjects {
+    if (_dynamicObjects == nil) {
+        _dynamicObjects = [NSMutableDictionary dictionary];
+    }
+    return _dynamicObjects;
+}
+
+- (NSMutableDictionary *)dynamicTexts {
+    if (_dynamicTexts == nil) {
+        _dynamicTexts = [NSMutableDictionary dictionary];
+    }
+    return _dynamicTexts;
+}
+
+- (NSMutableDictionary *)dynamicDrawings {
+    if (_dynamicDrawings == nil) {
+        _dynamicDrawings = [NSMutableDictionary dictionary];
+    }
+    return _dynamicDrawings;
+}
+
+- (NSMutableDictionary *)dynamicHiddens {
+    if (_dynamicHiddens == nil) {
+        _dynamicHiddens = [NSMutableDictionary dictionary];
+    }
+    return _dynamicHiddens;
+}
+
 - (void)setImage:(UIImage *)image forKey:(NSString *)aKey {
-    if (image == nil) {
-        return;
-    }
-    NSMutableDictionary *mutableDynamicObjects = [self.dynamicObjects mutableCopy];
-    [mutableDynamicObjects setObject:image forKey:aKey];
-    self.dynamicObjects = mutableDynamicObjects;
-    if (self.contentLayers.count > 0) {
-        for (SVGAContentLayer *layer in self.contentLayers) {
-            if ([layer isKindOfClass:[SVGAContentLayer class]] && [layer.imageKey isEqualToString:aKey]) {
-                layer.bitmapLayer.contents = (__bridge id _Nullable)([image CGImage]);
-            }
+    if (aKey == nil) return;
+    self.dynamicObjects[aKey] = image;
+    
+    if (self.contentLayers.count == 0) return;
+    
+    if (!image) image = self.videoItem.images[aKey];
+    for (SVGAContentLayer *layer in self.contentLayers) {
+        if ([layer isKindOfClass:[SVGAContentLayer class]] && [layer.imageKey isEqualToString:aKey]) {
+            layer.bitmapLayer.contents = (__bridge id _Nullable)([image CGImage]);
+            break;
         }
     }
-}
-
-- (void)setImageWithURL:(NSURL *)URL forKey:(NSString *)aKey {
-    [[[NSURLSession sharedSession] dataTaskWithURL:URL completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-        if (error == nil && data != nil) {
-            UIImage *image = [UIImage imageWithData:data];
-            if (image != nil) {
-                [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-                    [self setImage:image forKey:aKey];
-                }];
-            }
-        }
-    }] resume];
-}
-
-- (void)setImage:(UIImage *)image forKey:(NSString *)aKey referenceLayer:(CALayer *)referenceLayer {
-    [self setImage:image forKey:aKey];
 }
 
 - (void)setAttributedText:(NSAttributedString *)attributedText forKey:(NSString *)aKey {
-    if (attributedText == nil) {
-        return;
-    }
-    NSMutableDictionary *mutableDynamicTexts = [self.dynamicTexts mutableCopy];
-    [mutableDynamicTexts setObject:attributedText forKey:aKey];
-    self.dynamicTexts = mutableDynamicTexts;
-    if (self.contentLayers.count > 0) {
-        CGSize bitmapSize = CGSizeMake(self.videoItem.images[aKey].size.width * self.videoItem.images[aKey].scale, self.videoItem.images[aKey].size.height * self.videoItem.images[aKey].scale);
-        CGSize size = [attributedText boundingRectWithSize:bitmapSize
-                                                   options:NSStringDrawingUsesLineFragmentOrigin context:NULL].size;
-        CATextLayer *textLayer;
-        for (SVGAContentLayer *layer in self.contentLayers) {
-            if ([layer isKindOfClass:[SVGAContentLayer class]] && [layer.imageKey isEqualToString:aKey]) {
-                textLayer = layer.textLayer;
+    if (aKey == nil) return;
+    self.dynamicTexts[aKey] = attributedText;
+    
+    if (self.contentLayers.count == 0) return;
+    for (SVGAContentLayer *layer in self.contentLayers) {
+        if ([layer isKindOfClass:[SVGAContentLayer class]] && [layer.imageKey isEqualToString:aKey]) {
+            if (attributedText) {
+                CATextLayer *textLayer = layer.textLayer;
                 if (textLayer == nil) {
+                    UIImage *bitmap = self.videoItem.images[aKey];
+                    CGSize bitmapSize = CGSizeMake(bitmap.size.width * bitmap.scale, bitmap.size.height * bitmap.scale);
+                    CGSize size = [attributedText boundingRectWithSize:bitmapSize options:NSStringDrawingUsesLineFragmentOrigin context:nil].size;
                     textLayer = [CATextLayer layer];
+                    textLayer.contentsScale = UIScreen.mainScreen.scale;
+                    textLayer.frame = CGRectMake(0, 0, size.width, size.height);
                     [layer addSublayer:textLayer];
                     layer.textLayer = textLayer;
                     [layer resetTextLayerProperties:attributedText];
                 }
+                textLayer.string = attributedText;
+            } else {
+                [layer.textLayer removeFromSuperlayer];
+                layer.textLayer = nil;
             }
+            break;
         }
-        if (textLayer != nil) {
-            textLayer.contentsScale = [[UIScreen mainScreen] scale];
-            [textLayer setString:attributedText];
-            textLayer.frame = CGRectMake(0, 0, size.width, size.height);
+    }
+}
+
+- (void)setDrawingBlock:(kDynamicDrawingBlock)drawingBlock forKey:(NSString *)aKey {
+    if (aKey == nil) return;
+    self.dynamicDrawings[aKey] = drawingBlock;
+    
+    if (self.contentLayers.count == 0) return;
+    for (SVGAContentLayer *layer in self.contentLayers) {
+        if ([layer isKindOfClass:[SVGAContentLayer class]] && [layer.imageKey isEqualToString:aKey]) {
+            layer.dynamicDrawingBlock = drawingBlock;
+            break;
         }
     }
 }
 
 - (void)setHidden:(BOOL)hidden forKey:(NSString *)aKey {
-    NSMutableDictionary *mutableDynamicHiddens = [self.dynamicHiddens mutableCopy];
-    [mutableDynamicHiddens setObject:@(hidden) forKey:aKey];
-    self.dynamicHiddens = mutableDynamicHiddens;
-    if (self.contentLayers.count > 0) {
-        for (SVGAContentLayer *layer in self.contentLayers) {
-            if ([layer isKindOfClass:[SVGAContentLayer class]] &&
-                [layer.imageKey isEqualToString:aKey]) {
-                layer.dynamicHidden = hidden;
-            }
+    if (aKey == nil) return;
+    self.dynamicHiddens[aKey] = @(hidden);
+    
+    if (self.contentLayers.count == 0) return;
+    for (SVGAContentLayer *layer in self.contentLayers) {
+        if ([layer isKindOfClass:[SVGAContentLayer class]] && [layer.imageKey isEqualToString:aKey]) {
+            layer.dynamicHidden = hidden;
+            break;
         }
     }
 }
 
 - (void)clearDynamicObjects {
-    self.dynamicObjects = nil;
-    self.dynamicTexts = nil;
-    self.dynamicHiddens = nil;
-}
-
-- (NSDictionary *)dynamicObjects {
-    if (_dynamicObjects == nil) {
-        _dynamicObjects = @{};
-    }
-    return _dynamicObjects;
-}
-
-- (NSDictionary *)dynamicTexts {
-    if (_dynamicTexts == nil) {
-        _dynamicTexts = @{};
-    }
-    return _dynamicTexts;
-}
-
-- (NSDictionary *)dynamicHiddens {
-    if (_dynamicHiddens == nil) {
-        _dynamicHiddens = @{};
-    }
-    return _dynamicHiddens;
+    [_dynamicObjects removeAllObjects];
+    [_dynamicTexts removeAllObjects];
+    [_dynamicDrawings removeAllObjects];
+    [_dynamicHiddens removeAllObjects];
 }
 
 @end
