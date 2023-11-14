@@ -290,7 +290,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     if (_videoItem == nil && videoItem == nil) return;
     [self stopAnimation:YES];
     
-    if (self.superview && videoItem && [SVGAOptimizedPlayer checkVideoItem:videoItem] == SVGAVideoEntityError_None) {
+    if (videoItem && [SVGAOptimizedPlayer checkVideoItem:videoItem] == SVGAVideoEntityError_None) {
         _videoItem = videoItem;
     } else {
         _videoItem = nil;
@@ -370,12 +370,17 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 #pragma mark 开始播放
 - (BOOL)startAnimation {
+    [self stopAnimation:NO];
+    
     if (self.videoItem == nil) {
         _JPLog(@"[%p] videoItem是空的", self);
         return NO;
     }
     
-    [self stopAnimation:NO];
+    if (self.superview == nil) {
+        _JPLog(@"[%p] superview是空的", self);
+        return NO;
+    }
     
     if (self.isFinishedAll) {
         _loopCount = 0;
@@ -406,9 +411,20 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     return [self stepToFrame:frame andPlay:NO];
 }
 - (BOOL)stepToFrame:(NSInteger)frame andPlay:(BOOL)andPlay {
+    [self stopAnimation:NO];
+    
     if (self.videoItem == nil) {
-        _JPLog(@"[%p] videoItem是空的！", self);
+        _JPLog(@"[%p] videoItem是空的", self);
         return NO;
+    }
+    
+    if (self.superview == nil) {
+        _JPLog(@"[%p] superview是空的", self);
+        return NO;
+    }
+    
+    if (self.isFinishedAll) {
+        _loopCount = 0;
     }
     
     if (frame < self.minFrame) {
@@ -417,12 +433,6 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     } else if (frame > self.maxFrame) {
         _JPLog(@"[%p] 给的frame超出了总frames的范围！这里给你修正！", self);
         frame = self.maxFrame;
-    }
-    
-    [self stopAnimation:NO];
-    
-    if (self.isFinishedAll) {
-        _loopCount = 0;
     }
     
     BOOL isNeedUpdate = _currentFrame != frame;
