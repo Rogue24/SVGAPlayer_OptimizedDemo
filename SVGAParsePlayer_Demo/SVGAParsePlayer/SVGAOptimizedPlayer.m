@@ -150,7 +150,9 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    [self __resize];
+    if (self.videoItem && self.drawLayer) {
+        [self __resize];
+    }
 }
 
 - (void)dealloc {
@@ -581,7 +583,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }
     [CATransaction setDisableActions:NO];
     
-    // 反转时、停止时，不播放音频
+    // 反转、停止时，不播放音频
     if (!self.isReversing && self.isAnimating && self.audioLayers.count > 0) {
         for (SVGAAudioLayer *layer in self.audioLayers) {
             if (!layer.audioPlaying && layer.audioItem.startFrame <= self.currentFrame && self.currentFrame <= layer.audioItem.endFrame) {
@@ -598,77 +600,103 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }
 }
 
-/// 适配图层
+/// 适配图层形变
 - (void)__resize {
-    if (self.contentMode == UIViewContentModeScaleAspectFit) {
-        CGFloat videoRatio = self.videoItem.videoSize.width / self.videoItem.videoSize.height;
-        CGFloat layerRatio = self.bounds.size.width / self.bounds.size.height;
-        if (videoRatio > layerRatio) {
-            CGFloat ratio = self.bounds.size.width / self.videoItem.videoSize.width;
-            CGPoint offset = CGPointMake(
-                                         (1.0 - ratio) / 2.0 * self.videoItem.videoSize.width,
-                                         (1.0 - ratio) / 2.0 * self.videoItem.videoSize.height
-                                         - (self.bounds.size.height - self.videoItem.videoSize.height * ratio) / 2.0
-                                         );
-            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(ratio, 0, 0, ratio, -offset.x, -offset.y));
+    CGSize videoSize = self.videoItem.videoSize;
+    switch (self.contentMode) {
+        case UIViewContentModeScaleAspectFit:
+        {
+            CGSize viewSize = self.bounds.size;
+            CGFloat videoRatio = videoSize.width / videoSize.height;
+            CGFloat layerRatio = viewSize.width / viewSize.height;
+            
+            CGFloat ratio;
+            CGFloat offsetX;
+            CGFloat offsetY;
+            if (videoRatio > layerRatio) { // 跟AspectFill不一样的地方
+                ratio = viewSize.width / videoSize.width;
+                offsetX = (1.0 - ratio) / 2.0 * videoSize.width;
+                offsetY = (1.0 - ratio) / 2.0 * videoSize.height - (viewSize.height - videoSize.height * ratio) / 2.0;
+            } else {
+                ratio = viewSize.height / videoSize.height;
+                offsetX = (1.0 - ratio) / 2.0 * videoSize.width - (viewSize.width - videoSize.width * ratio) / 2.0;
+                offsetY = (1.0 - ratio) / 2.0 * videoSize.height;
+            }
+            
+            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(ratio, 0, 0, ratio, -offsetX, -offsetY));
+            break;
         }
-        else {
-            CGFloat ratio = self.bounds.size.height / self.videoItem.videoSize.height;
-            CGPoint offset = CGPointMake(
-                                         (1.0 - ratio) / 2.0 * self.videoItem.videoSize.width - (self.bounds.size.width - self.videoItem.videoSize.width * ratio) / 2.0,
-                                         (1.0 - ratio) / 2.0 * self.videoItem.videoSize.height);
-            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(ratio, 0, 0, ratio, -offset.x, -offset.y));
+            
+        case UIViewContentModeScaleAspectFill:
+        {
+            CGSize viewSize = self.bounds.size;
+            CGFloat videoRatio = videoSize.width / videoSize.height;
+            CGFloat layerRatio = viewSize.width / viewSize.height;
+            
+            CGFloat ratio;
+            CGFloat offsetX;
+            CGFloat offsetY;
+            if (videoRatio < layerRatio) { // 跟AspectFit不一样的地方
+                ratio = viewSize.width / videoSize.width;
+                offsetX = (1.0 - ratio) / 2.0 * videoSize.width;
+                offsetY = (1.0 - ratio) / 2.0 * videoSize.height - (viewSize.height - videoSize.height * ratio) / 2.0;
+            } else {
+                ratio = viewSize.height / videoSize.height;
+                offsetX = (1.0 - ratio) / 2.0 * videoSize.width - (viewSize.width - videoSize.width * ratio) / 2.0;
+                offsetY = (1.0 - ratio) / 2.0 * videoSize.height;
+            }
+            
+            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(ratio, 0, 0, ratio, -offsetX, -offsetY));
+            break;
         }
-    }
-    else if (self.contentMode == UIViewContentModeScaleAspectFill) {
-        CGFloat videoRatio = self.videoItem.videoSize.width / self.videoItem.videoSize.height;
-        CGFloat layerRatio = self.bounds.size.width / self.bounds.size.height;
-        if (videoRatio < layerRatio) {
-            CGFloat ratio = self.bounds.size.width / self.videoItem.videoSize.width;
-            CGPoint offset = CGPointMake(
-                                         (1.0 - ratio) / 2.0 * self.videoItem.videoSize.width,
-                                         (1.0 - ratio) / 2.0 * self.videoItem.videoSize.height
-                                         - (self.bounds.size.height - self.videoItem.videoSize.height * ratio) / 2.0
-                                         );
-            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(ratio, 0, 0, ratio, -offset.x, -offset.y));
+            
+        case UIViewContentModeTop:
+        {
+            CGFloat scaleX = self.frame.size.width / videoSize.width;
+            CGFloat offsetX = (1.0 - scaleX) / 2.0 * videoSize.width;
+            CGFloat offsetY = (1.0 - scaleX) / 2.0 * videoSize.height;
+            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleX, 0, 0, scaleX, -offsetX, -offsetY));
+            break;
         }
-        else {
-            CGFloat ratio = self.bounds.size.height / self.videoItem.videoSize.height;
-            CGPoint offset = CGPointMake(
-                                         (1.0 - ratio) / 2.0 * self.videoItem.videoSize.width - (self.bounds.size.width - self.videoItem.videoSize.width * ratio) / 2.0,
-                                         (1.0 - ratio) / 2.0 * self.videoItem.videoSize.height);
-            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(ratio, 0, 0, ratio, -offset.x, -offset.y));
+            
+        case UIViewContentModeBottom:
+        {
+            CGFloat scaleX = self.frame.size.width / videoSize.width;
+            CGFloat offsetX = (1.0 - scaleX) / 2.0 * videoSize.width;
+            CGFloat offsetY = (1.0 - scaleX) / 2.0 * videoSize.height;
+            CGFloat diffY = self.frame.size.height - videoSize.height * scaleX;
+            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleX, 0, 0, scaleX, -offsetX, -offsetY + diffY));
+            break;
         }
-    }
-    else if (self.contentMode == UIViewContentModeTop) {
-        CGFloat scaleX = self.frame.size.width / self.videoItem.videoSize.width;
-        CGPoint offset = CGPointMake((1.0 - scaleX) / 2.0 * self.videoItem.videoSize.width, (1 - scaleX) / 2.0 * self.videoItem.videoSize.height);
-        self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleX, 0, 0, scaleX, -offset.x, -offset.y));
-    }
-    else if (self.contentMode == UIViewContentModeBottom) {
-        CGFloat scaleX = self.frame.size.width / self.videoItem.videoSize.width;
-        CGPoint offset = CGPointMake(
-                                     (1.0 - scaleX) / 2.0 * self.videoItem.videoSize.width,
-                                     (1.0 - scaleX) / 2.0 * self.videoItem.videoSize.height);
-        self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleX, 0, 0, scaleX, -offset.x, -offset.y + self.frame.size.height - self.videoItem.videoSize.height * scaleX));
-    }
-    else if (self.contentMode == UIViewContentModeLeft) {
-        CGFloat scaleY = self.frame.size.height / self.videoItem.videoSize.height;
-        CGPoint offset = CGPointMake((1.0 - scaleY) / 2.0 * self.videoItem.videoSize.width, (1 - scaleY) / 2.0 * self.videoItem.videoSize.height);
-        self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleY, 0, 0, scaleY, -offset.x, -offset.y));
-    }
-    else if (self.contentMode == UIViewContentModeRight) {
-        CGFloat scaleY = self.frame.size.height / self.videoItem.videoSize.height;
-        CGPoint offset = CGPointMake(
-                                     (1.0 - scaleY) / 2.0 * self.videoItem.videoSize.width,
-                                     (1.0 - scaleY) / 2.0 * self.videoItem.videoSize.height);
-        self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleY, 0, 0, scaleY, -offset.x + self.frame.size.width - self.videoItem.videoSize.width * scaleY, -offset.y));
-    }
-    else {
-        CGFloat scaleX = self.frame.size.width / self.videoItem.videoSize.width;
-        CGFloat scaleY = self.frame.size.height / self.videoItem.videoSize.height;
-        CGPoint offset = CGPointMake((1.0 - scaleX) / 2.0 * self.videoItem.videoSize.width, (1 - scaleY) / 2.0 * self.videoItem.videoSize.height);
-        self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleX, 0, 0, scaleY, -offset.x, -offset.y));
+            
+        case UIViewContentModeLeft:
+        {
+            CGFloat scaleY = self.frame.size.height / videoSize.height;
+            CGFloat offsetX = (1.0 - scaleY) / 2.0 * videoSize.width;
+            CGFloat offsetY = (1.0 - scaleY) / 2.0 * videoSize.height;
+            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleY, 0, 0, scaleY, -offsetX, -offsetY));
+            break;
+        }
+            
+        case UIViewContentModeRight:
+        {
+            CGFloat scaleY = self.frame.size.height / videoSize.height;
+            CGFloat offsetX = (1.0 - scaleY) / 2.0 * videoSize.width;
+            CGFloat offsetY = (1.0 - scaleY) / 2.0 * videoSize.height;
+            CGFloat diffX = self.frame.size.width - videoSize.width * scaleY;
+            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleY, 0, 0, scaleY, -offsetX + diffX, -offsetY));
+            break;
+        }
+            
+        default:
+        {
+            CGFloat scaleX = self.frame.size.width / videoSize.width;
+            CGFloat scaleY = self.frame.size.height / videoSize.height;
+            CGFloat offsetX = (1.0 - scaleX) / 2.0 * videoSize.width;
+            CGFloat offsetY = (1.0 - scaleY) / 2.0 * videoSize.height;
+            self.drawLayer.transform = CATransform3DMakeAffineTransform(CGAffineTransformMake(scaleX, 0, 0, scaleY, -offsetX, -offsetY));
+            break;
+        }
     }
 }
 
