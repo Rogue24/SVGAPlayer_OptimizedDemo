@@ -216,8 +216,13 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
     
     public override func willMove(toSuperview newSuperview: UIView?) {
         let isClear = newSuperview == nil
-        if isClear { asyncTag = nil }
         
+        if isClear {
+            _debugLog("即将没有父视图了，需要停止并清空")
+            asyncTag = nil
+        }
+        
+        // 父类会在该方法中调用`[self stopAnimation:YES];`
         super.willMove(toSuperview: newSuperview)
         
         if isClear {
@@ -228,6 +233,7 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
             
             _debugLog("停止 - 没有父视图了，清空")
             status = .idle
+            alpha = isHidesWhenStopped ? 0 : 1
         }
     }
     
@@ -552,6 +558,7 @@ private extension SVGAParsePlayer {
             step(toFrame: isStepToTrailingWhenStopped ? trailingFrame : leadingFrame)
             status = .stopped
         }
+        alpha = isHidesWhenStopped ? 0 : 1
     }
 }
 
@@ -624,8 +631,8 @@ public extension SVGAParsePlayer {
         self.svgaSource = svgaSource
         entity = nil
         asyncTag = nil
-        status = .idle
         
+        status = .idle
         _hideIfNeeded { [weak self] in
             guard let self else { return }
             self._loadSVGA(svgaSource, fromFrame: fromFrame, isAutoPlay: isAutoPlay)
@@ -659,8 +666,8 @@ public extension SVGAParsePlayer {
         
         self.svgaSource = svgaSource
         self.entity = nil
-        status = .idle
         
+        status = .idle
         _hideIfNeeded { [weak self] in
             guard let self else { return }
             
