@@ -151,7 +151,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 - (void)layoutSubviews {
     [super layoutSubviews];
     if (self.videoItem && self.drawLayer) {
-        [self __resize];
+        [self __resizeLayers];
     }
 }
 
@@ -188,10 +188,10 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
         if (self.isAnimating || self.drawLayer == nil) return;
         if (self->_isReversing && self->_currentFrame == self->_startFrame) {
             self->_currentFrame = self->_endFrame;
-            [self __update];
+            [self __updateLayers];
         } else if (!self->_isReversing && self->_currentFrame == self->_endFrame) {
             self->_currentFrame = self->_startFrame;
-            [self __update];
+            [self __updateLayers];
         }
     });
 }
@@ -209,11 +209,24 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 - (void)setVideoItem:(SVGAVideoEntity *)videoItem {
     [self setVideoItem:videoItem
             startFrame:0
-              endFrame:(videoItem.frames > 0 ? (videoItem.frames - 1) : 0)];
+              endFrame:(videoItem.frames > 1 ? (videoItem.frames - 1) : 0)];
 }
 
-- (NSInteger)frameCount {
+- (NSInteger)frames {
     return _videoItem.frames;
+}
+
+- (NSInteger)fps {
+    return _videoItem.FPS;
+}
+
+- (NSTimeInterval)duration {
+    int frames = _videoItem.frames;
+    int fps = _videoItem.FPS;
+    if (frames > 0 && fps > 0) {
+        return (NSTimeInterval)frames / (NSTimeInterval)fps;
+    }
+    return 0;
 }
 
 - (NSInteger)minFrame {
@@ -221,8 +234,8 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 }
 
 - (NSInteger)maxFrame {
-    NSInteger frameCount = self.frameCount;
-    return frameCount > 0 ? (frameCount - 1) : 0;
+    int frames = _videoItem.frames;
+    return frames > 1 ? (frames - 1) : 0;
 }
 
 - (NSInteger)leadingFrame {
@@ -233,13 +246,18 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     return _isReversing ? _startFrame : _endFrame;
 }
 
-- (NSTimeInterval)duration {
-    if (_videoItem && _videoItem.frames > 0 && _videoItem.FPS > 0) {
-        int frames = _videoItem.frames;
-        int FPS = _videoItem.FPS;
-        return (NSTimeInterval)frames / (NSTimeInterval)FPS;
+- (float)progress {
+    NSInteger playableFrames = _endFrame - _startFrame;
+    if (playableFrames <= 0) return 0;
+    
+    float progress = 0;
+    if (_isReversing) {
+        progress = (float)(_endFrame - _currentFrame) / (float)playableFrames;
+    } else {
+        progress = (float)(_currentFrame - _startFrame) / (float)playableFrames;
     }
-    return 0;
+    
+    return progress > 1 ? 1 : (progress < 0 ? 0 : progress);
 }
 
 - (BOOL)isAnimating {
@@ -247,7 +265,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 }
 
 - (BOOL)isFinishedAll {
-    return _loops > 0 && _loopCount >= _loops;
+    return (_loops > 0) && (_loopCount >= _loops);
 }
 
 #pragma mark - 公开方法
@@ -275,7 +293,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
         currentFrame:(NSInteger)currentFrame {
     [self setVideoItem:videoItem
             startFrame:0
-              endFrame:(videoItem.frames > 0 ? (videoItem.frames - 1) : 0)
+              endFrame:(videoItem.frames > 1 ? (videoItem.frames - 1) : 0)
           currentFrame:currentFrame];
 }
 - (void)setVideoItem:(SVGAVideoEntity *)videoItem
@@ -327,22 +345,22 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
            currentFrame:_currentFrame];
 }
 - (void)setStartFrame:(NSInteger)startFrame endFrame:(NSInteger)endFrame currentFrame:(NSInteger)currentFrame {
-    NSInteger frameCount = _videoItem.frames;
+    NSInteger frames = _videoItem.frames;
     
-    if (frameCount <= 1) {
+    if (frames <= 1) {
         _startFrame = 0;
         _endFrame = 0;
         _currentFrame = 0;
         if (!self.isAnimating) {
-            [self __resetDrawLayerIfNeed:YES];
+            [self __drawLayersIfNeeded:YES];
         }
         return;
     }
     
     if (endFrame < 0) {
         endFrame = 0;
-    } else if (endFrame >= frameCount) {
-        endFrame = frameCount > 0 ? (frameCount - 1) : 0;
+    } else if (endFrame >= frames) {
+        endFrame = frames - 1;
     }
     
     if (startFrame < 0) {
@@ -362,7 +380,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     _currentFrame = currentFrame;
     
     if (!self.isAnimating) {
-        [self __resetDrawLayerIfNeed:YES];
+        [self __drawLayersIfNeeded:YES];
     }
 }
 
@@ -399,7 +417,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     BOOL isNeedUpdate = _currentFrame != frame;
     _currentFrame = frame;
     
-    [self __resetDrawLayerIfNeed:isNeedUpdate];
+    [self __drawLayersIfNeeded:isNeedUpdate];
     return [self __addLink];
 }
 
@@ -431,7 +449,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     BOOL isNeedUpdate = _currentFrame != frame;
     _currentFrame = frame;
     
-    [self __resetDrawLayerIfNeed:isNeedUpdate];
+    [self __drawLayersIfNeeded:isNeedUpdate];
     if (andPlay) {
         return [self __addLink];
     } else {
@@ -453,7 +471,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     [self __removeLink];
     [self __stopAudios];
     if (isClear) {
-        [self __clear];
+        [self __clearLayers];
     }
 }
 
@@ -469,25 +487,25 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }
 }
 
-/// 重置图层
-- (void)__resetDrawLayerIfNeed:(BOOL)isNeedUpdate {
+/// 绘制图层如需
+- (void)__drawLayersIfNeeded:(BOOL)isNeedUpdate {
     _jp_dispatch_sync_on_main_queue(^{
         if (self.videoItem == nil) {
-            [self __clear];
+            [self __clearLayers];
             return;
         }
         if (self.drawLayer == nil) {
-            [self __clear];
-            [self __draw];
+            [self __clearLayers];
+            [self __drawLayers];
         } else if (isNeedUpdate) {
-            [self __update];
+            [self __updateLayers];
         }
     });
 }
 
 /// 清空图层
-- (void)__clear {
-//    _JPLog(@"[SVGAOptimizedPlayer_%p] __clear", self);
+- (void)__clearLayers {
+//    _JPLog(@"[SVGAOptimizedPlayer_%p] __clearLayers", self);
     self.audioLayers = nil;
     self.contentLayers = nil;
     [self.drawLayer removeFromSuperlayer];
@@ -495,8 +513,8 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 }
 
 /// 绘制图层
-- (void)__draw {
-//    _JPLog(@"[SVGAOptimizedPlayer_%p] __draw", self);
+- (void)__drawLayers {
+//    _JPLog(@"[SVGAOptimizedPlayer_%p] __drawLayers", self);
     self.drawLayer = [[CALayer alloc] init];
     self.drawLayer.frame = CGRectMake(0, 0, self.videoItem.videoSize.width, self.videoItem.videoSize.height);
     self.drawLayer.masksToBounds = true;
@@ -561,8 +579,6 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }];
     self.contentLayers = tempContentLayers.copy;
     
-    [self.layer addSublayer:self.drawLayer];
-    
     NSMutableArray *audioLayers = [NSMutableArray array];
     [self.videoItem.audios enumerateObjectsUsingBlock:^(SVGAAudioEntity * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         SVGAAudioLayer *audioLayer = [[SVGAAudioLayer alloc] initWithAudioItem:obj videoItem:self.videoItem];
@@ -570,12 +586,13 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }];
     self.audioLayers = audioLayers.copy;
     
-    [self __update];
-    [self __resize];
+    [self.layer addSublayer:self.drawLayer];
+    [self __updateLayers];
+    [self __resizeLayers];
 }
 
 /// 更新图层+音频
-- (void)__update {
+- (void)__updateLayers {
     [CATransaction setDisableActions:YES];
     for (SVGAContentLayer *layer in self.contentLayers) {
         if ([layer isKindOfClass:[SVGAContentLayer class]]) {
@@ -601,8 +618,8 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }
 }
 
-/// 适配图层形变
-- (void)__resize {
+/// 调整图层
+- (void)__resizeLayers {
     CGSize videoSize = self.videoItem.videoSize;
     switch (self.contentMode) {
         case UIViewContentModeScaleAspectFit:
@@ -712,7 +729,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }
     
 //    _JPLog(@"[SVGAOptimizedPlayer_%p] 开启定时器，此时startFrame: %zd, endFrame: %zd, currentFrame: %zd, loopCount: %zd", self, self.startFrame, self.endFrame, self.currentFrame, self.loopCount);
-    self.displayLink = [CADisplayLink displayLinkWithTarget:[_JPProxy proxyWithTarget:self] selector:@selector(__next)];
+    self.displayLink = [CADisplayLink displayLinkWithTarget:[_JPProxy proxyWithTarget:self] selector:@selector(__linkHandle)];
     self.displayLink.preferredFramesPerSecond = self.videoItem.FPS;
     [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:self.mainRunLoopMode];
     return YES;
@@ -726,7 +743,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }
 }
 
-- (void)__next {
+- (void)__linkHandle {
     id delegate = self.delegate;
     
     BOOL isFinish = NO;
@@ -769,7 +786,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
         _currentFrame = self.leadingFrame;
     }
     
-    [self __update];
+    [self __updateLayers];
     
     if (delegate != nil && [delegate respondsToSelector:@selector(svgaPlayerDidAnimating:)]) {
         [delegate svgaPlayerDidAnimating:self];

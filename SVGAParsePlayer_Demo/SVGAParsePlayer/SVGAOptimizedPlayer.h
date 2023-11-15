@@ -52,25 +52,31 @@ typedef void(^kDynamicDrawingBlock)(CALayer *contentLayer, NSInteger frameIndex)
 
 /// SVGA资源
 @property (nonatomic, strong, nullable) SVGAVideoEntity *videoItem;
-/// 起始帧数
-@property (nonatomic, assign, readonly) NSInteger startFrame;
-/// 结束帧数
-@property (nonatomic, assign, readonly) NSInteger endFrame;
-/// 当前帧数
-@property (nonatomic, assign, readonly) NSInteger currentFrame;
-
 /// 总帧数
-@property (readonly) NSInteger frameCount;
+@property (readonly) NSInteger frames;
+/// 每秒帧数
+@property (readonly) NSInteger fps;
+/// 总时长
+@property (readonly) NSTimeInterval duration;
+
 /// 最小帧数
 @property (readonly) NSInteger minFrame;
 /// 最大帧数
 @property (readonly) NSInteger maxFrame;
+/// 起始帧数
+@property (nonatomic, assign, readonly) NSInteger startFrame;
+/// 结束帧数
+@property (nonatomic, assign, readonly) NSInteger endFrame;
 /// 头部帧数
 @property (readonly) NSInteger leadingFrame;
 /// 尾部帧数
 @property (readonly) NSInteger trailingFrame;
-/// SVGA时长
-@property (readonly) NSTimeInterval duration;
+
+/// 当前帧数
+@property (nonatomic, assign, readonly) NSInteger currentFrame;
+/// 当前进度
+@property (readonly) float progress;
+
 /// 是否播放中
 @property (readonly) BOOL isAnimating;
 /// 是否完成所有播放（前提条件：loops > 0）

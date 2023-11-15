@@ -9,13 +9,26 @@ import UIKit
 import SVProgressHUD
 
 class ViewController: UIViewController {
+    let operationBar = UIView()
+    let reverseSwitch = UISwitch()
     let player = SVGAParsePlayer()
+    let progressView = UIProgressView()
+    
+    var isProgressing: Bool = false {
+        didSet {
+            guard isProgressing != oldValue else { return }
+            UIView.animate(withDuration: 0.15) {
+                self.progressView.alpha = self.isProgressing ? 1 : 0
+            }
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupOperationBar()
         setupPlayer()
+        setupProgressView()
         
         setupLoader()
         setupDownloader()
@@ -63,13 +76,18 @@ private extension ViewController {
 
 // MARK: - <SVGAParsePlayerDelegate>
 extension ViewController: SVGAParsePlayerDelegate {
-    func svgaParsePlayer(_ player: SVGAParsePlayer, statusDidChanged status: SVGAParsePlayerStatus, oldStatus: SVGAParsePlayerStatus) {
+    func svgaParsePlayer(_ player: SVGAParsePlayer, 
+                         statusDidChanged status: SVGAParsePlayerStatus,
+                         oldStatus: SVGAParsePlayerStatus) {
+        isProgressing = (status == .playing || status == .paused)
         switch status {
         case .loading:
             SVProgressHUD.setDefaultMaskType(.none)
             SVProgressHUD.show()
+            reverseSwitch.isUserInteractionEnabled = false
         default:
             SVProgressHUD.dismiss()
+            reverseSwitch.isUserInteractionEnabled = true
         }
     }
     
@@ -97,24 +115,29 @@ extension ViewController: SVGAParsePlayerDelegate {
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showError(withStatus: error.localizedDescription)
     }
+    
+    func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, didAnimatingToFrame frame: Int) {
+        guard player.isPlaying else { return }
+        progressView.progress = player.progress
+    }
 }
 
 // MARK: - Setup UI & Data
 private extension ViewController {
     func setupOperationBar() {
         let h = NavBarH + NavBarH + DiffTabBarH
-        let operationBar = UIView(frame: CGRect(x: 0, y: PortraitScreenHeight - h, width: PortraitScreenWidth, height: h))
+        operationBar.frame = CGRect(x: 0, y: PortraitScreenHeight - h, width: PortraitScreenWidth, height: h)
         view.addSubview(operationBar)
         
         let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
         blurView.frame = operationBar.bounds
         operationBar.addSubview(blurView)
         
-        setupTopItems(operationBar)
-        setupBottomItems(operationBar)
+        setupTopItems()
+        setupBottomItems()
     }
     
-    func setupTopItems(_ operationBar: UIView) {
+    func setupTopItems() {
         let playRemoteBtn = UIButton(type: .system)
         playRemoteBtn.setTitle("Remote SVGA", for: .normal)
         playRemoteBtn.titleLabel?.font = .systemFont(ofSize: 16.px, weight: .bold)
@@ -135,7 +158,6 @@ private extension ViewController {
         playLocalBtn.frame.origin.x = playRemoteBtn.frame.maxX + 20.px
         operationBar.addSubview(playLocalBtn)
         
-        let reverseSwitch = UISwitch()
         reverseSwitch.isOn = false
         reverseSwitch.addTarget(self, action: #selector(toggleReverse(_:)), for: .valueChanged)
         reverseSwitch.frame.origin.x = PortraitScreenWidth - reverseSwitch.frame.width - 20.px
@@ -143,7 +165,7 @@ private extension ViewController {
         operationBar.addSubview(reverseSwitch)
     }
     
-    func setupBottomItems(_ operationBar: UIView) {
+    func setupBottomItems() {
         let stackView = UIStackView()
         stackView.backgroundColor = .clear
         stackView.frame = CGRect(x: 0, y: NavBarH, width: PortraitScreenWidth, height: NavBarH)
@@ -179,16 +201,21 @@ private extension ViewController {
     }
     
     func setupPlayer() {
-        let bottomInset = NavBarH + NavBarH + DiffTabBarH
-        let height = PortraitScreenHeight - StatusBarH - bottomInset
+        let height = PortraitScreenHeight - StatusBarH - operationBar.frame.height
         player.frame = CGRect(x: 0, y: StatusBarH, width: PortraitScreenWidth, height: height)
         player.contentMode = .scaleAspectFit
         view.addSubview(player)
         
         player.isDebugLog = true
         player.isAnimated = true
-        player.isHidesWhenStopped = true
         player.myDelegate = self
+    }
+    
+    func setupProgressView() {
+        progressView.frame = CGRect(x: 0, y: operationBar.frame.origin.y - 3, width: PortraitScreenWidth, height: 3)
+        progressView.trackTintColor = .clear
+        progressView.alpha = 0
+        view.addSubview(progressView)
     }
     
     func setupLoader() {
