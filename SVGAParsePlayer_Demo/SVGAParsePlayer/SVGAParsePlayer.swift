@@ -184,10 +184,10 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
     /// 是否在【空闲 / 停止】状态时重置`loopCount`（默认为`true`）
     public var isResetLoopCountWhenStopped = true
     
-    /// 是否启用内存缓存（默认为`false`，主要是给到`SVGAParser`使用）
+    /// 是否启用内存缓存（主要是给到`SVGAParser`使用，默认为`false`）
     public var isEnabledMemoryCache = false
     
-    /// 是否打印调试日志（默认为`false`，仅限`DEBUG`环境）
+    /// 是否打印调试日志（仅限`DEBUG`环境，默认为`false`）
     public var isDebugLog = false {
         willSet {
 #if DEBUG
