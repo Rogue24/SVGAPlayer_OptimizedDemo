@@ -192,7 +192,20 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
     public weak var myDelegate: (any SVGAParsePlayerDelegate)? = nil
     
     /// 是否打印调试日志（仅限DEBUG环境）
-    public var isDebugLog = false
+    public var isDebugLog = false {
+        willSet {
+#if DEBUG
+            guard isDebugLog != newValue, !newValue else { return }
+            _debugLog("close debug log")
+#endif
+        }
+        didSet {
+#if DEBUG
+            guard isDebugLog != oldValue, !oldValue else { return }
+            _debugLog("open debug log")
+#endif
+        }
+    }
     
     /// 调试信息（仅限DEBUG环境）
     public var debugInfo: String {
@@ -238,21 +251,27 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
     }
     
     deinit {
-        _debugLog("死亡 - \(self)")
+        _debugLog("死亡")
     }
     
     // MARK: - 私有方法
     private func baseSetup() {
-        _debugLog("出生 - \(self)")
         delegate = self
         clearsAfterStop = false
     }
+    
+    /// 打印自身地址（仅限DEBUG环境）
+#if DEBUG
+    private var memoryAddress: String {
+        String(format: "%p", self)
+    }
+#endif
     
     /// 打印调试日志（仅限DEBUG环境）
     private func _debugLog(_ str: String) {
 #if DEBUG
         guard isDebugLog else { return }
-        print("[SVGAParsePlayer_Print] \(str)")
+        print("[SVGAParsePlayer_\(memoryAddress)] \(str)")
 #endif
     }
 }
@@ -522,10 +541,10 @@ private extension SVGAParsePlayer {
         
         if step(toFrame: fromFrame, andPlay: isAutoPlay) {
             if isAutoPlay {
-                _debugLog("成功跳至特定帧\(fromFrame) - 播放 \(svgaSource)")
+                _debugLog("成功跳至特定帧\(fromFrame)，并且自动播放 - 播放 \(svgaSource)")
                 status = .playing
             } else {
-                _debugLog("成功跳至特定帧\(fromFrame) - 暂停 \(svgaSource)")
+                _debugLog("成功跳至特定帧\(fromFrame)，并且不播放 - 暂停 \(svgaSource)")
                 status = .paused
             }
         } else {
