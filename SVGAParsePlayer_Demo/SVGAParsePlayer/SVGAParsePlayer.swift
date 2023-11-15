@@ -131,8 +131,8 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
     public static var cacheKeyGenerator: CacheKeyGenerator? = nil
     public typealias CacheKeyGenerator = (_ svgaSource: String) -> String
     
-    private var asyncTag: UUID?
-    private var isWillAutoPlay = false
+    /// 代理（代替原`delegate`！）
+    public weak var myDelegate: (any SVGAParsePlayerDelegate)? = nil
     
     /// SVGA资源路径
     public private(set) var svgaSource: String = ""
@@ -147,7 +147,6 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
             myDelegate.svgaParsePlayer?(self, statusDidChanged: status, oldStatus: oldValue)
         }
     }
-    
     /// 是否正在空闲
     public var isIdle: Bool { status == .idle }
     /// 是否正在加载
@@ -159,11 +158,11 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
     /// 是否已停止
     public var isStopped: Bool { status == .stopped }
     
-    /// 是否带动画过渡（默认为false）
+    /// 是否带动画过渡（默认为`false`）
     /// - 为`true`则会在「更换SVGA」和「播放/停止」的场景中带有淡入淡出的效果
     public var isAnimated = false
     
-    /// 是否在【空闲 / 停止】状态时隐藏自身（默认不隐藏）
+    /// 是否在【空闲 / 停止】状态时隐藏自身（默认为`false`）
     public var isHidesWhenStopped = false {
         didSet {
             if status == .idle || status == .loading || status == .stopped {
@@ -174,7 +173,7 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
         }
     }
     
-    /// 是否在【停止】时跳至最后一帧（默认跳至起始第一帧）
+    /// 是否在【停止】时跳至最后一帧（默认为`false`：跳至起始第一帧）
     public var isStepToTrailingWhenStopped = false {
         didSet {
             guard status == .stopped else { return }
@@ -182,16 +181,13 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
         }
     }
     
-    /// 是否在【空闲 / 停止】状态时重置`loopCount`（默认为true）
+    /// 是否在【空闲 / 停止】状态时重置`loopCount`（默认为`true`）
     public var isResetLoopCountWhenStopped = true
     
-    /// 是否启用内存缓存（给到SVGAParser使用，默认为false）
+    /// 是否启用内存缓存（默认为`false`，主要是给到`SVGAParser`使用）
     public var isEnabledMemoryCache = false
     
-    /// 代理
-    public weak var myDelegate: (any SVGAParsePlayerDelegate)? = nil
-    
-    /// 是否打印调试日志（仅限DEBUG环境）
+    /// 是否打印调试日志（默认为`false`，仅限`DEBUG`环境）
     public var isDebugLog = false {
         willSet {
 #if DEBUG
@@ -207,14 +203,19 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
         }
     }
     
-    /// 调试信息（仅限DEBUG环境）
+    /// 调试信息（仅限`DEBUG`环境）
     public var debugInfo: String {
 #if DEBUG
-        "[SVGAParsePlayer_Print] svgaSource: \(svgaSource), status: \(status), startFrame: \(startFrame), endFrame: \(endFrame), currentFrame: \(currentFrame), loops: \(loops), loopCount:\(loopCount)"
+        "[SVGAParsePlayer_\(String(format: "%p", self))] svgaSource: \(svgaSource), status: \(status), startFrame: \(startFrame), endFrame: \(endFrame), currentFrame: \(currentFrame), loops: \(loops), loopCount:\(loopCount)"
 #else
         ""
 #endif
     }
+    
+    /// 异步标识
+    private var asyncTag: UUID?
+    /// 用于记录异步回调时是否自动播放
+    private var isWillAutoPlay = false
     
     // MARK: - 初始化
     public override init(frame: CGRect) {
@@ -260,18 +261,11 @@ class SVGAParsePlayer: SVGAOptimizedPlayer {
         clearsAfterStop = false
     }
     
-    /// 打印自身地址（仅限DEBUG环境）
-#if DEBUG
-    private var memoryAddress: String {
-        String(format: "%p", self)
-    }
-#endif
-    
     /// 打印调试日志（仅限DEBUG环境）
     private func _debugLog(_ str: String) {
 #if DEBUG
         guard isDebugLog else { return }
-        print("[SVGAParsePlayer_\(memoryAddress)] \(str)")
+        print("[SVGAParsePlayer_\(String(format: "%p", self))] \(str)")
 #endif
     }
 }
