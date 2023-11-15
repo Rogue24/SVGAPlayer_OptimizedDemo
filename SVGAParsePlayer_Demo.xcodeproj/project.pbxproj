@@ -21,6 +21,7 @@
 		009F1D952A961699009C9FF4 /* Goddess.svga in Resources */ = {isa = PBXBuildFile; fileRef = 009F1D8B2A961699009C9FF4 /* Goddess.svga */; };
 		009F1D972A961699009C9FF4 /* Rose.svga in Resources */ = {isa = PBXBuildFile; fileRef = 009F1D8D2A961699009C9FF4 /* Rose.svga */; };
 		009F1D9B2A96213B009C9FF4 /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009F1D9A2A96213B009C9FF4 /* Constant.swift */; };
+		1AD0CD4C2B0521AF0020285D /* bgImage.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 1AD0CD4B2B0521AE0020285D /* bgImage.jpg */; };
 		3AFA5A7C6AB2DD8B609C30E8 /* Pods_SVGAParsePlayer_Demo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 30E4AB3159702A3C9C6E1513 /* Pods_SVGAParsePlayer_Demo.framework */; };
 /* End PBXBuildFile section */
 
@@ -45,6 +46,7 @@
 		009F1D9A2A96213B009C9FF4 /* Constant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constant.swift; sourceTree = "<group>"; };
 		19225488E0EFB6221E4479D1 /* Pods-SVGAParsePlayer_Demo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SVGAParsePlayer_Demo.release.xcconfig"; path = "Target Support Files/Pods-SVGAParsePlayer_Demo/Pods-SVGAParsePlayer_Demo.release.xcconfig"; sourceTree = "<group>"; };
 		1ACE10AC2B0007AE003881D3 /* SVGAParsePlayer_Demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SVGAParsePlayer_Demo-Bridging-Header.h"; sourceTree = "<group>"; };
+		1AD0CD4B2B0521AE0020285D /* bgImage.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = bgImage.jpg; sourceTree = "<group>"; };
 		30E4AB3159702A3C9C6E1513 /* Pods_SVGAParsePlayer_Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SVGAParsePlayer_Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		84722344303371C7A79C365F /* Pods-SVGAParsePlayer_Demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SVGAParsePlayer_Demo.debug.xcconfig"; path = "Target Support Files/Pods-SVGAParsePlayer_Demo/Pods-SVGAParsePlayer_Demo.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -101,8 +103,9 @@
 				009F1D9A2A96213B009C9FF4 /* Constant.swift */,
 				009F1D7F2A9608E0009C9FF4 /* Extension.swift */,
 				009F1D682A95FC80009C9FF4 /* Main.storyboard */,
-				009F1D6B2A95FC81009C9FF4 /* Assets.xcassets */,
 				009F1D6D2A95FC81009C9FF4 /* LaunchScreen.storyboard */,
+				1AD0CD4B2B0521AE0020285D /* bgImage.jpg */,
+				009F1D6B2A95FC81009C9FF4 /* Assets.xcassets */,
 				009F1D702A95FC81009C9FF4 /* Info.plist */,
 				1ACE10AC2B0007AE003881D3 /* SVGAParsePlayer_Demo-Bridging-Header.h */,
 			);
@@ -198,6 +201,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1AD0CD4C2B0521AF0020285D /* bgImage.jpg in Resources */,
 				009F1D6F2A95FC81009C9FF4 /* LaunchScreen.storyboard in Resources */,
 				009F1D6C2A95FC81009C9FF4 /* Assets.xcassets in Resources */,
 				009F1D952A961699009C9FF4 /* Goddess.svga in Resources */,

@@ -10,7 +10,6 @@ import SVProgressHUD
 
 class ViewController: UIViewController {
     let player = SVGAParsePlayer()
-    var isAutoPlay = true
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,16 +30,18 @@ class ViewController: UIViewController {
 private extension ViewController {
     @objc func playRemote() {
         let svga = RemoteSources.randomElement()!
-        player.play(svga, fromFrame: 0, isAutoPlay: isAutoPlay)
+        player.play(svga)
     }
 
     @objc func playLocal() {
         let svga = LocalSources.randomElement()!
-        player.play(svga, fromFrame: 0, isAutoPlay: isAutoPlay)
+        player.play(svga)
     }
     
-    @objc func toggleAutoPlay(_ sender: UISwitch) {
-        isAutoPlay = sender.isOn
+    @objc func toggleReverse(_ sender: UISwitch) {
+        SVProgressHUD.setDefaultMaskType(.none)
+        SVProgressHUD.showInfo(withStatus: sender.isOn ? "开启反转播放" : "恢复正常播放")
+        player.isReversing = sender.isOn
     }
     
     @objc func play() {
@@ -52,7 +53,7 @@ private extension ViewController {
     }
     
     @objc func reset() {
-        player.reset(isAutoPlay: isAutoPlay)
+        player.reset(isAutoPlay: true)
     }
     
     @objc func stop() {
@@ -134,12 +135,12 @@ private extension ViewController {
         playLocalBtn.frame.origin.x = playRemoteBtn.frame.maxX + 20.px
         operationBar.addSubview(playLocalBtn)
         
-        let autoPlaySwitch = UISwitch()
-        autoPlaySwitch.isOn = isAutoPlay
-        autoPlaySwitch.addTarget(self, action: #selector(toggleAutoPlay(_:)), for: .valueChanged)
-        autoPlaySwitch.frame.origin.x = PortraitScreenWidth - autoPlaySwitch.frame.width - 20.px
-        autoPlaySwitch.frame.origin.y = (NavBarH - autoPlaySwitch.frame.height) * 0.5
-        operationBar.addSubview(autoPlaySwitch)
+        let reverseSwitch = UISwitch()
+        reverseSwitch.isOn = false
+        reverseSwitch.addTarget(self, action: #selector(toggleReverse(_:)), for: .valueChanged)
+        reverseSwitch.frame.origin.x = PortraitScreenWidth - reverseSwitch.frame.width - 20.px
+        reverseSwitch.frame.origin.y = (NavBarH - reverseSwitch.frame.height) * 0.5
+        operationBar.addSubview(reverseSwitch)
     }
     
     func setupBottomItems(_ operationBar: UIView) {

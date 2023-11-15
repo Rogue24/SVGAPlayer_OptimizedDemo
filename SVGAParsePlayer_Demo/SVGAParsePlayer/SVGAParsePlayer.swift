@@ -10,67 +10,67 @@ import UIKit
 @objc public
 protocol SVGAParsePlayerDelegate: NSObjectProtocol {
     @objc optional
-    /// 状态发生改变
+    /// 状态发生改变【播放状态】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          statusDidChanged status: SVGAParsePlayerStatus,
                          oldStatus: SVGAParsePlayerStatus)
     
     @objc optional
-    /// SVGA未知来源
+    /// SVGA未知来源【无法播放】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          unknownSvga source: String)
     
     @objc optional
-    /// SVGA资源加载失败
+    /// SVGA资源加载失败【无法播放】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          dataLoadFailed error: Error)
     
     @objc optional
-    /// 加载的SVGA资源解析失败
+    /// 加载的SVGA资源解析失败【无法播放】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          dataParseFailed error: Error)
     
     @objc optional
-    /// 本地SVGA资源解析失败
+    /// 本地SVGA资源解析失败【无法播放】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          assetParseFailed error: Error)
     
     @objc optional
-    /// SVGA资源无效
+    /// SVGA资源无效【无法播放】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          entity: SVGAVideoEntity,
                          invalid error: Error)
     
     @objc optional
-    /// SVGA资源解析成功
+    /// SVGA资源解析成功【可以播放】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          parseDone entity: SVGAVideoEntity)
     
     @objc optional
-    /// SVGA动画已准备好可播放
+    /// SVGA动画已准备好可播放【即将播放】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          readyForPlay isPlay: Bool)
     
     @objc optional
-    /// SVGA动画执行回调
+    /// SVGA动画执行回调【正在播放】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          didAnimatingToFrame frame: Int)
     
     @objc optional
-    /// SVGA动画完成一次播放
+    /// SVGA动画完成一次播放【正在播放】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          didFinishedOnceAnimation loopCount: Int)
     
     @objc optional
-    /// SVGA动画结束（用户手动停止 or 设置了loops并且达到次数）
+    /// SVGA动画结束（用户手动停止 or 设置了`loops`并且达到次数）【播放结束】
     func svgaParsePlayer(_ player: SVGAParsePlayer,
                          svga source: String,
                          didFinishedAllAnimation isUserStop: Bool)
