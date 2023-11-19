@@ -1,5 +1,5 @@
 //
-//  SVGAOptimizedPlayer.h
+//  SVGARePlayer.h
 //  SVGAParsePlayer_Demo
 //
 //  Created by aa on 2023/11/6.
@@ -10,7 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class SVGAOptimizedPlayer;
+@class SVGARePlayer;
 
 typedef NS_ENUM(NSUInteger, SVGAVideoEntityError) {
     SVGAVideoEntityError_None = 0,
@@ -19,26 +19,44 @@ typedef NS_ENUM(NSUInteger, SVGAVideoEntityError) {
     SVGAVideoEntityError_ZeroFrames = 3,
 };
 
-typedef void(^kDynamicDrawingBlock)(CALayer *contentLayer, NSInteger frameIndex);
+typedef NS_ENUM(NSUInteger, SVGARePlayerPlayError) {
+    SVGARePlayerPlayError_NullEntity = 1,
+    SVGARePlayerPlayError_NullSuperview = 2,
+    SVGARePlayerPlayError_ZeroPlayableFrames = 3,
+};
 
-@protocol SVGAOptimizedPlayerDelegate <NSObject>
+typedef NS_ENUM(NSUInteger, SVGARePlayerStoppedScene) {
+    SVGARePlayerStoppedScene_ClearLayers = 0,
+    SVGARePlayerStoppedScene_StepToTrailing = 1,
+    SVGARePlayerStoppedScene_BackToLeading = 2,
+};
+
+typedef void(^SVGARePlayerDrawingBlock)(CALayer *contentLayer, NSInteger frameIndex);
+
+@protocol SVGARePlayerDelegate <NSObject>
 @optional
 /// 正在播放的回调
-- (void)svgaPlayerDidAnimating:(SVGAOptimizedPlayer *)player;
+- (void)svgaRePlayer:(SVGARePlayer *)player animationPlaying:(NSInteger)currentFrame;
+/// 播放失败的回调
+- (void)svgaRePlayer:(SVGARePlayer *)player animationPlayFailed:(SVGARePlayerPlayError)error;
 /// 完成一次播放的回调
-- (void)svgaPlayerDidFinishedOnceAnimation:(SVGAOptimizedPlayer *)player;
-/// 完成所有播放的回调（前提条件：loops > 0）
-- (void)svgaPlayerDidFinishedAllAnimation:(SVGAOptimizedPlayer *)player;
+- (void)svgaRePlayer:(SVGARePlayer *)player animationDidFinishedOnce:(NSInteger)loopCount;
+/// 完成所有播放的回调（前提条件：`loops > 0`）
+- (void)svgaRePlayer:(SVGARePlayer *)player animationDidFinishedAll:(NSInteger)loopCount;
 @end
 
-@interface SVGAOptimizedPlayer: UIView
+@interface SVGARePlayer: UIView
 /// 代理
-@property (nonatomic, weak) id<SVGAOptimizedPlayerDelegate> delegate;
+@property (nonatomic, weak) id<SVGARePlayerDelegate> delegate;
 
 /// 播放所在RunLoop模式（默认为CommonMode）
 @property (nonatomic, copy) NSRunLoopMode mainRunLoopMode;
-/// 停止动画时是否清空图层（默认为YES）
-@property (nonatomic, assign) BOOL clearsAfterStop;
+
+/// 主动调用`stopAnimation`后的情景
+@property (nonatomic, assign) SVGARePlayerStoppedScene userStoppedScene;
+/// 完成所有播放后（`loops > 0`）的情景
+@property (nonatomic, assign) SVGARePlayerStoppedScene finishedAllScene;
+
 
 /// 播放次数（大于0才会触发回调`svgaPlayerDidFinishedAllAnimation`）
 @property (nonatomic, assign) NSInteger loops;
@@ -79,7 +97,7 @@ typedef void(^kDynamicDrawingBlock)(CALayer *contentLayer, NSInteger frameIndex)
 
 /// 是否播放中
 @property (readonly) BOOL isAnimating;
-/// 是否完成所有播放（前提条件：loops > 0）
+/// 是否完成所有播放（前提条件：`loops > 0`）
 @property (readonly) BOOL isFinishedAll;
 
 #pragma mark 检验SVGA资源
@@ -111,13 +129,13 @@ typedef void(^kDynamicDrawingBlock)(CALayer *contentLayer, NSInteger frameIndex)
 - (void)pauseAnimation;
 
 #pragma mark 停止播放
-- (void)stopAnimation;
-- (void)stopAnimation:(BOOL)isClear;
+- (void)stopAnimation; // ==> [self stopAnimation:self.userStoppedScene];
+- (void)stopAnimation:(SVGARePlayerStoppedScene)scene;
 
 #pragma mark - Dynamic Object
 - (void)setImage:(nullable UIImage *)image forKey:(NSString *)aKey;
 - (void)setAttributedText:(nullable NSAttributedString *)attributedText forKey:(NSString *)aKey;
-- (void)setDrawingBlock:(nullable kDynamicDrawingBlock)drawingBlock forKey:(NSString *)aKey;
+- (void)setDrawingBlock:(nullable SVGARePlayerDrawingBlock)drawingBlock forKey:(NSString *)aKey;
 - (void)setHidden:(BOOL)hidden forKey:(NSString *)aKey;
 - (void)clearDynamicObjects;
 @end
