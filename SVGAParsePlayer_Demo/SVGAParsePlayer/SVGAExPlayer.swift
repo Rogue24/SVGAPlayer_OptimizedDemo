@@ -331,8 +331,9 @@ private extension SVGAExPlayer {
         }
         
         if self.svgaSource == svgaSource, entity != nil {
-            _debugLog("已经有了，不用加载 \(svgaSource)")
             _asyncTag = nil
+            _debugLog("已经有了，不用加载 \(svgaSource)")
+            resetLoopCount()
             _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay, isNew: false)
             return
         }
@@ -680,7 +681,9 @@ public extension SVGAExPlayer {
         let svgaSource = String(format: "%p", memoryAddress)
         guard !_checkEntityIsInvalid(entity, for: svgaSource) else { return }
         
-        guard self.svgaSource != svgaSource else {
+        if self.svgaSource == svgaSource, self.entity != nil {
+            _debugLog("已经有了，不用加载 \(svgaSource)")
+            resetLoopCount()
             _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay, isNew: false)
             return
         }
