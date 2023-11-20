@@ -61,10 +61,11 @@ typedef NS_ENUM(NSUInteger, SVGARePlayerStoppedScene) {
 /// 当前播放次数
 @property (nonatomic, assign, readonly) NSInteger loopCount;
 
-/// 是否反转播放
-@property (nonatomic, assign) BOOL isReversing;
 /// 是否静音
 @property (nonatomic, assign) BOOL isMute;
+
+/// 是否反转播放
+@property (nonatomic, assign) BOOL isReversing;
 
 /// SVGA资源
 @property (nonatomic, strong, nullable) SVGAVideoEntity *videoItem;
@@ -79,16 +80,18 @@ typedef NS_ENUM(NSUInteger, SVGARePlayerStoppedScene) {
 
 /// 当前帧数
 @property (nonatomic, assign, readonly) NSInteger currentFrame;
+
 /// 当前进度
 @property (readonly) float progress;
 
 /// 是否播放中
 @property (readonly) BOOL isAnimating;
+
 /// 是否完成所有播放（前提条件：`loops > 0`）
 @property (readonly) BOOL isFinishedAll;
 
-#pragma mark 更换SVGA资源+设置播放区间
-- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem 
+#pragma mark - 更换SVGA资源+设置播放区间
+- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem
         currentFrame:(NSInteger)currentFrame;
 
 - (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem
@@ -100,7 +103,7 @@ typedef NS_ENUM(NSUInteger, SVGARePlayerStoppedScene) {
             endFrame:(NSInteger)endFrame
         currentFrame:(NSInteger)currentFrame;
 
-#pragma mark 设置播放区间
+#pragma mark - 设置播放区间
 /// 重置起始帧数为最小帧数（0），结束帧数为最大帧数（videoItem.frames）
 - (void)resetStartFrameAndEndFrame;
 
@@ -117,20 +120,20 @@ typedef NS_ENUM(NSUInteger, SVGARePlayerStoppedScene) {
              endFrame:(NSInteger)endFrame
          currentFrame:(NSInteger)currentFrame;
 
-#pragma mark 重置loopCount
+#pragma mark - 重置loopCount
 - (void)resetLoopCount;
 
-#pragma mark 开始播放（如果已经完成所有播放，则重置loopCount；返回YES代表播放成功）
+#pragma mark - 开始播放（如果已经完成所有播放，则重置loopCount；返回YES代表播放成功）
 - (BOOL)startAnimation;
 
-#pragma mark 跳至指定帧（如果已经完成所有播放，则重置loopCount；返回YES代表播放/跳转成功）
+#pragma mark - 跳至指定帧（如果已经完成所有播放，则重置loopCount；返回YES代表播放/跳转成功）
 - (BOOL)stepToFrame:(NSInteger)frame;
 - (BOOL)stepToFrame:(NSInteger)frame andPlay:(BOOL)andPlay;
 
-#pragma mark 暂停播放
+#pragma mark - 暂停播放
 - (void)pauseAnimation;
 
-#pragma mark 停止播放
+#pragma mark - 停止播放
 - (void)stopAnimation; // ==> [self stopAnimation:self.userStoppedScene];
 - (void)stopAnimation:(SVGARePlayerStoppedScene)scene;
 

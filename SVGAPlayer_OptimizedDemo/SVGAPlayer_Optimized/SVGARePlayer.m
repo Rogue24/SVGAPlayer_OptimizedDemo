@@ -194,6 +194,16 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     _loopCount = 0;
 }
 
+- (void)setIsMute:(BOOL)isMute {
+    if (_isMute == isMute) return;
+    _isMute = isMute;
+    
+    float volume = isMute ? 0 : 1;
+    for (SVGAAudioLayer *layer in self.audioLayers) {
+        layer.audioPlayer.volume = volume;
+    }
+}
+
 - (void)setIsReversing:(BOOL)isReversing {
     if (_isReversing == isReversing) return;
     _isReversing = isReversing;
@@ -208,16 +218,6 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
             [self __updateLayers];
         }
     });
-}
-
-- (void)setIsMute:(BOOL)isMute {
-    if (_isMute == isMute) return;
-    _isMute = isMute;
-    
-    float volume = isMute ? 0 : 1;
-    for (SVGAAudioLayer *layer in self.audioLayers) {
-        layer.audioPlayer.volume = volume;
-    }
 }
 
 - (void)setVideoItem:(SVGAVideoEntity *)videoItem {
