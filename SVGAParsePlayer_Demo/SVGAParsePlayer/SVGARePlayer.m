@@ -14,7 +14,17 @@
 #import <pthread.h>
 
 #ifdef DEBUG
-#define _JPLog(format, ...) printf("[%s] %s [第%d行] %s\n", [[[SVGARePlayer dateFormatter] stringFromDate:[NSDate date]] UTF8String], __FUNCTION__, __LINE__, [[NSString stringWithFormat:format, ## __VA_ARGS__] UTF8String]);
+static NSString *globalStaticString = nil;
+NSDateFormatter *getDateFormatter_(void) {
+    static NSDateFormatter *dateFormatter_ = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        dateFormatter_ = [[NSDateFormatter alloc] init];
+        [dateFormatter_ setDateFormat:@"hh:mm:ss:SS"];
+    });
+    return dateFormatter_;
+}
+#define _JPLog(format, ...) printf("[%s] %s\n", [[getDateFormatter_() stringFromDate:[NSDate date]] UTF8String], [[NSString stringWithFormat:format, ## __VA_ARGS__] UTF8String]);
 #else
 #define _JPLog(format, ...)
 #endif
@@ -116,18 +126,6 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 @implementation SVGARePlayer
 
-#ifdef DEBUG
-+ (NSDateFormatter *)dateFormatter {
-    static NSDateFormatter *dateFormatter_ = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        dateFormatter_ = [[NSDateFormatter alloc] init];
-        [dateFormatter_ setDateFormat:@"hh:mm:ss:SS"];
-    });
-    return dateFormatter_;
-}
-#endif
-
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
         [self initPlayer];
@@ -143,7 +141,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 }
 
 - (void)initPlayer {
-//    _JPLog(@"[SVGAOptimizedPlayer_%p] alloc", self);
+//    _JPLog(@"[SVGARePlayer_%p] alloc", self);
     self.contentMode = UIViewContentModeTop;
     _mainRunLoopMode = NSRunLoopCommonModes;
     _userStoppedScene = SVGARePlayerStoppedScene_ClearLayers;
@@ -161,10 +159,6 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     [super willMoveToSuperview:newSuperview];
     if (newSuperview == nil) {
         [self stopAnimation:SVGARePlayerStoppedScene_ClearLayers];
-        _JPLog(@"[SVGAOptimizedPlayer_%p] superview是空的，无法播放", self);
-        if (self.delegate != nil && [self.delegate respondsToSelector:@selector(svgaRePlayer:animationPlayFailed:)]) {
-            [self.delegate svgaRePlayer:self animationPlayFailed:SVGARePlayerPlayError_NullSuperview];
-        }
     }
 }
 
@@ -177,7 +171,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 - (void)dealloc {
     [self stopAnimation:SVGARePlayerStoppedScene_ClearLayers];
-//    _JPLog(@"[SVGAOptimizedPlayer_%p] dealloc", self);
+//    _JPLog(@"[SVGARePlayer_%p] dealloc", self);
 }
 
 #pragma mark - Setter & Getter
@@ -232,32 +226,6 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
               endFrame:(videoItem.frames > 1 ? (videoItem.frames - 1) : 0)];
 }
 
-- (NSInteger)frames {
-    return _videoItem.frames;
-}
-
-- (NSInteger)fps {
-    return _videoItem.FPS;
-}
-
-- (NSTimeInterval)duration {
-    int frames = _videoItem.frames;
-    int fps = _videoItem.FPS;
-    if (frames > 0 && fps > 0) {
-        return (NSTimeInterval)frames / (NSTimeInterval)fps;
-    }
-    return 0;
-}
-
-- (NSInteger)minFrame {
-    return 0;
-}
-
-- (NSInteger)maxFrame {
-    int frames = _videoItem.frames;
-    return frames > 1 ? (frames - 1) : 0;
-}
-
 - (NSInteger)leadingFrame {
     return _isReversing ? _endFrame : _startFrame;
 }
@@ -270,12 +238,15 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     NSInteger playableFrames = _endFrame - _startFrame;
     if (playableFrames <= 0) return 0;
     
-    float progress = 0;
-    if (_isReversing) {
-        progress = (float)(_endFrame - _currentFrame) / (float)playableFrames;
-    } else {
-        progress = (float)(_currentFrame - _startFrame) / (float)playableFrames;
-    }
+    // 都是正序
+//    float progress = 0;
+//    if (_isReversing) {
+//        progress = (float)(_endFrame - _currentFrame) / (float)playableFrames;
+//    } else {
+//        progress = (float)(_currentFrame - _startFrame) / (float)playableFrames;
+//    }
+    // 包括正反序
+    float progress = (float)(_currentFrame - _startFrame) / (float)playableFrames;
     
     return progress > 1 ? 1 : (progress < 0 ? 0 : progress);
 }
@@ -289,24 +260,6 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 }
 
 #pragma mark - 公开方法
-
-#pragma mark 检验SVGA资源
-+ (SVGAVideoEntityError)checkVideoItem:(SVGAVideoEntity *)videoItem {
-    if (videoItem.videoSize.width <= 0 || videoItem.videoSize.height <= 0) {
-        _JPLog(@"[SVGAOptimizedPlayer_%p] SVGA资源有问题：videoSize是0！", self);
-        return SVGAVideoEntityError_ZeroVideoSize;
-    }
-    else if (videoItem.FPS == 0) {
-        _JPLog(@"[SVGAOptimizedPlayer_%p] SVGA资源有问题：FPS是0！", self);
-        return SVGAVideoEntityError_ZeroFPS;
-    }
-    else if (videoItem.frames == 0) {
-        _JPLog(@"[SVGAOptimizedPlayer_%p] SVGA资源有问题：frames是0！", self);
-        return SVGAVideoEntityError_ZeroFrames;
-    }
-//    _JPLog(@"[SVGAOptimizedPlayer_%p] SVGA资源没问题！", self);
-    return SVGAVideoEntityError_None;
-}
 
 #pragma mark 更换SVGA资源+设置播放区间
 - (void)setVideoItem:(SVGAVideoEntity *)videoItem
@@ -331,13 +284,15 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
             endFrame:(NSInteger)endFrame
         currentFrame:(NSInteger)currentFrame {
     if (_videoItem == nil && videoItem == nil) return;
+    
     [self stopAnimation:SVGARePlayerStoppedScene_ClearLayers];
     
-    if (videoItem && [SVGARePlayer checkVideoItem:videoItem] == SVGAVideoEntityError_None) {
+    if (videoItem && videoItem.entityError == SVGAVideoEntityError_None) {
         _videoItem = videoItem;
     } else {
         _videoItem = nil;
     }
+    
     _loopCount = 0;
     
     [self setStartFrame:startFrame
@@ -347,19 +302,19 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 #pragma mark 设置播放区间
 - (void)resetStartFrameAndEndFrame {
-    [self setStartFrame:self.minFrame
-               endFrame:self.maxFrame
+    [self setStartFrame:_videoItem.minFrame
+               endFrame:_videoItem.maxFrame
            currentFrame:_currentFrame];
 }
 
 - (void)setStartFrameUntilTheEnd:(NSInteger)startFrame {
     [self setStartFrame:startFrame
-               endFrame:self.maxFrame
+               endFrame:_videoItem.maxFrame
            currentFrame:_currentFrame];
 }
 
 - (void)setEndFrameFromBeginning:(NSInteger)endFrame {
-    [self setStartFrame:self.minFrame
+    [self setStartFrame:_videoItem.minFrame
                endFrame:endFrame
            currentFrame:_currentFrame];
 }
@@ -421,11 +376,13 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 - (BOOL)startAnimation {
     [self pauseAnimation];
     
+    NSInteger frame = _currentFrame;
+    
     if (self.isFinishedAll) {
         _loopCount = 0;
+        frame = self.leadingFrame;
     }
     
-    NSInteger frame = _currentFrame;
     if (_isReversing) {
         if (frame <= _startFrame) {
             frame = _endFrame;
@@ -453,16 +410,17 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 - (BOOL)stepToFrame:(NSInteger)frame andPlay:(BOOL)andPlay {
     [self pauseAnimation];
     
-    if (self.isFinishedAll) {
+    if (andPlay && self.isFinishedAll) {
         _loopCount = 0;
+        frame = self.leadingFrame;
     }
     
-    if (frame < self.minFrame) {
-        _JPLog(@"[SVGAOptimizedPlayer_%p] 给的frame超出了总frames的范围！这里给你修正！", self);
-        frame = self.minFrame;
-    } else if (frame > self.maxFrame) {
-        _JPLog(@"[SVGAOptimizedPlayer_%p] 给的frame超出了总frames的范围！这里给你修正！", self);
-        frame = self.maxFrame;
+    if (frame < _videoItem.minFrame) {
+        _JPLog(@"[SVGARePlayer_%p] 给的frame超出了总frames的范围！这里给你修正！", self);
+        frame = _videoItem.minFrame;
+    } else if (frame > _videoItem.maxFrame) {
+        _JPLog(@"[SVGARePlayer_%p] 给的frame超出了总frames的范围！这里给你修正！", self);
+        frame = _videoItem.maxFrame;
     }
     
     BOOL isNeedUpdate = _currentFrame != frame;
@@ -474,7 +432,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     if (andPlay) {
         return [self __addLink];
     } else {
-        if (isNeedUpdate) _JPLog(@"[SVGAOptimizedPlayer_%p] 已跳至第%zd帧，并且不播放", self, frame);
+        if (isNeedUpdate) _JPLog(@"[SVGARePlayer_%p] 已跳至第%zd帧，并且不播放", self, frame);
         return YES;
     }
 }
@@ -496,13 +454,14 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
             [self stepToFrame:self.trailingFrame];
             break;
             
-        case SVGARePlayerStoppedScene_BackToLeading:
+        case SVGARePlayerStoppedScene_StepToLeading:
             [self stepToFrame:self.leadingFrame];
             break;
             
         default:
             [self pauseAnimation];
             [self __clearLayers];
+            _currentFrame = 0;
             break;
     }
 }
@@ -521,7 +480,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 /// 清空图层
 - (void)__clearLayers {
-//    _JPLog(@"[SVGAOptimizedPlayer_%p] __clearLayers", self);
+//    _JPLog(@"[SVGARePlayer_%p] __clearLayers", self);
     self.audioLayers = nil;
     self.contentLayers = nil;
     [self.drawLayer removeFromSuperlayer];
@@ -547,7 +506,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 /// 绘制图层
 - (void)__drawLayers {
-//    _JPLog(@"[SVGAOptimizedPlayer_%p] __drawLayers", self);
+//    _JPLog(@"[SVGARePlayer_%p] __drawLayers", self);
     self.drawLayer = [[CALayer alloc] init];
     self.drawLayer.frame = CGRectMake(0, 0, self.videoItem.videoSize.width, self.videoItem.videoSize.height);
     self.drawLayer.masksToBounds = true;
@@ -753,7 +712,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 - (BOOL)__checkIsCanDraw {
     if (self.videoItem == nil) {
-        _JPLog(@"[SVGAOptimizedPlayer_%p] videoItem是空的，无法播放", self);
+        _JPLog(@"[SVGARePlayer_%p] videoItem是空的，无法播放", self);
         if (self.delegate != nil && [self.delegate respondsToSelector:@selector(svgaRePlayer:animationPlayFailed:)]) {
             [self.delegate svgaRePlayer:self animationPlayFailed:SVGARePlayerPlayError_NullEntity];
         }
@@ -761,7 +720,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }
     
     if (self.superview == nil) {
-        _JPLog(@"[SVGAOptimizedPlayer_%p] superview是空的，无法播放", self);
+        _JPLog(@"[SVGARePlayer_%p] superview是空的，无法播放", self);
         if (self.delegate != nil && [self.delegate respondsToSelector:@selector(svgaRePlayer:animationPlayFailed:)]) {
             [self.delegate svgaRePlayer:self animationPlayFailed:SVGARePlayerPlayError_NullSuperview];
         }
@@ -775,7 +734,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 - (BOOL)__addLink {
     [self __removeLink];
-//    _JPLog(@"[SVGAOptimizedPlayer_%p] 开启定时器，此时startFrame: %zd, endFrame: %zd, currentFrame: %zd, loopCount: %zd", self, self.startFrame, self.endFrame, self.currentFrame, self.loopCount);
+//    _JPLog(@"[SVGARePlayer_%p] 开启定时器，此时startFrame: %zd, endFrame: %zd, currentFrame: %zd, loopCount: %zd", self, self.startFrame, self.endFrame, self.currentFrame, self.loopCount);
     self.displayLink = [CADisplayLink displayLinkWithTarget:[_JPProxy proxyWithTarget:self] selector:@selector(__linkHandle)];
     self.displayLink.preferredFramesPerSecond = self.videoItem.FPS;
     [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:self.mainRunLoopMode];
@@ -784,7 +743,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 - (void)__removeLink {
     if (self.displayLink) {
-//        _JPLog(@"[SVGAOptimizedPlayer_%p] 关闭定时器，此时startFrame: %zd, endFrame: %zd, currentFrame: %zd, loopCount: %zd", self, self.startFrame, self.endFrame, self.currentFrame, self.loopCount);
+//        _JPLog(@"[SVGARePlayer_%p] 关闭定时器，此时startFrame: %zd, endFrame: %zd, currentFrame: %zd, loopCount: %zd", self, self.startFrame, self.endFrame, self.currentFrame, self.loopCount);
         [self.displayLink invalidate];
         self.displayLink = nil;
     }
@@ -813,7 +772,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     if (self.isFinishedAll) { // 全部完成
         _loopCount = _loops;
         [self stopAnimation:_finishedAllScene];
-        _JPLog(@"[SVGAOptimizedPlayer_%p] 全部播放完成 %zd", self, _loops);
+        _JPLog(@"[SVGARePlayer_%p] 全部播放完成 %zd", self, _loops);
         if (delegate != nil && [delegate respondsToSelector:@selector(svgaRePlayer:animationDidFinishedAll:)]) {
             [delegate svgaRePlayer:self animationDidFinishedAll:_loopCount];
         }
@@ -829,7 +788,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
         // 有可能在回调时修改了新的startFrame和endFrame，判断一下是否能继续
         if (self.leadingFrame == self.trailingFrame) {
             [self stopAnimation:SVGARePlayerStoppedScene_StepToTrailing];
-            _JPLog(@"[SVGAOptimizedPlayer_%p] 没有可播放帧数或只有一帧，无法开启定时器", self);
+            _JPLog(@"[SVGARePlayer_%p] 没有可播放帧数或只有一帧，无法开启定时器", self);
             if (delegate != nil && [delegate respondsToSelector:@selector(svgaRePlayer:animationPlayFailed:)]) {
                 [delegate svgaRePlayer:self animationPlayFailed:SVGARePlayerPlayError_ZeroPlayableFrames];
             }

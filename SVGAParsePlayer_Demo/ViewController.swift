@@ -11,7 +11,7 @@ import SVProgressHUD
 class ViewController: UIViewController {
     let operationBar = UIView()
     let reverseSwitch = UISwitch()
-    let player = SVGAParsePlayer()
+    let player = SVGAExPlayer()
     let progressView = UIProgressView()
     
     var isProgressing: Bool = false {
@@ -70,15 +70,16 @@ private extension ViewController {
     }
     
     @objc func stop() {
-        player.stop(isClear: false)
+        player.stop()
     }
 }
 
-// MARK: - <SVGAParsePlayerDelegate>
-extension ViewController: SVGAParsePlayerDelegate {
-    func svgaParsePlayer(_ player: SVGAParsePlayer, 
-                         statusDidChanged status: SVGAParsePlayerStatus,
-                         oldStatus: SVGAParsePlayerStatus) {
+// MARK: - <SVGAExPlayerDelegate>
+extension ViewController: SVGAExPlayerDelegate {
+    /// 状态发生改变【状态更新】
+    func svgaExPlayer(_ player: SVGAExPlayer,
+                      statusDidChanged status: SVGAExPlayerStatus,
+                      oldStatus: SVGAExPlayerStatus) {
         isProgressing = (status == .playing || status == .paused)
         switch status {
         case .loading:
@@ -91,32 +92,72 @@ extension ViewController: SVGAParsePlayerDelegate {
         }
     }
     
-    func svgaParsePlayer(_ player: SVGAParsePlayer, unknownSvga source: String) {
+    /// SVGA未知来源【无法播放】
+    func svgaExPlayer(_ player: SVGAExPlayer,
+                      unknownSvga source: String) {
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showError(withStatus: "未知来源")
     }
     
-    func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, dataLoadFailed error: Error) {
+    /// SVGA资源加载失败【无法播放】
+    func svgaExPlayer(_ player: SVGAExPlayer,
+                      svga source: String,
+                      dataLoadFailed error: Error) {
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showError(withStatus: error.localizedDescription)
     }
     
-    func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, dataParseFailed error: Error) {
+    /// 加载的SVGA资源解析失败【无法播放】
+    func svgaExPlayer(_ player: SVGAExPlayer,
+                      svga source: String,
+                      dataParseFailed error: Error) {
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showError(withStatus: error.localizedDescription)
     }
     
-    func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, assetParseFailed error: Error) {
+    /// 本地SVGA资源解析失败【无法播放】
+    func svgaExPlayer(_ player: SVGAExPlayer,
+                      svga source: String,
+                      assetParseFailed error: Error) {
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showError(withStatus: error.localizedDescription)
     }
     
-    func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, entity: SVGAVideoEntity, invalid error: Error) {
+    /// SVGA资源无效【无法播放】
+    func svgaExPlayer(_ player: SVGAExPlayer,
+                      svga source: String,
+                      entity: SVGAVideoEntity,
+                      invalid error: SVGAVideoEntityError) {
+        let status: String
+        switch error {
+        case .zeroVideoSize: status = "SVGA资源有问题：videoSize是0！"
+        case .zeroFPS: status = "SVGA资源有问题：FPS是0！"
+        case .zeroFrames: status = "SVGA资源有问题：frames是0！"
+        default: return
+        }
         SVProgressHUD.setDefaultMaskType(.none)
-        SVProgressHUD.showError(withStatus: error.localizedDescription)
+        SVProgressHUD.showError(withStatus: status)
     }
     
-    func svgaParsePlayer(_ player: SVGAParsePlayer, svga source: String, didAnimatingToFrame frame: Int) {
+    /// SVGA动画播放失败的回调【播放失败】
+    func svgaExPlayer(_ player: SVGAExPlayer,
+                      svga source: String,
+                      animationPlayFailed error: SVGARePlayerPlayError) {
+        let status: String
+        switch error {
+        case .nullEntity: status = "SVGA资源是空的，无法播放"
+        case .nullSuperview: status = "父视图是空的，无法播放"
+        case .zeroPlayableFrames: status = "没有可播放帧数或只有一帧，无法开启定时器"
+        default: return
+        }
+        SVProgressHUD.setDefaultMaskType(.none)
+        SVProgressHUD.showError(withStatus: status)
+    }
+    
+    /// SVGA动画执行回调【正在播放】
+    func svgaExPlayer(_ player: SVGAExPlayer,
+                      svga source: String,
+                      animationPlaying currentFrame: Int) {
         guard player.isPlaying else { return }
         progressView.progress = player.progress
     }
@@ -208,7 +249,7 @@ private extension ViewController {
         
         player.isDebugLog = true
         player.isAnimated = true
-        player.myDelegate = self
+        player.exDelegate = self
     }
     
     func setupProgressView() {
@@ -219,7 +260,7 @@ private extension ViewController {
     }
     
     func setupLoader() {
-        SVGAParsePlayer.loader = { svgaSource, success, failure, forwardDownload, forwardLoadAsset in
+        SVGAExPlayer.loader = { svgaSource, success, failure, forwardDownload, forwardLoadAsset in
             guard FileManager.default.fileExists(atPath: svgaSource) else {
                 if svgaSource.hasPrefix("http://") || svgaSource.hasPrefix("https://") {
                     forwardDownload(svgaSource)
@@ -240,7 +281,7 @@ private extension ViewController {
     }
     
     func setupDownloader() {
-        SVGAParsePlayer.downloader = { svgaSource, success, failure in
+        SVGAExPlayer.downloader = { svgaSource, success, failure in
             guard let url = URL(string: svgaSource) else {
                 failure(NSError(domain: "SVGAParsePlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "路径错误"]))
                 return
@@ -258,7 +299,7 @@ private extension ViewController {
     }
     
     func setupCacheKeyGenerator() {
-        SVGAParsePlayer.cacheKeyGenerator = { $0.md5 }
+        SVGAExPlayer.cacheKeyGenerator = { $0.md5 }
     }
     
     func writeBundleDataToCache(_ resName: String) {
