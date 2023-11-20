@@ -539,10 +539,10 @@ private extension SVGAExPlayer {
     
     func _afterStopSVGA() {
         if status != .idle {
-            _debugLog("停止 - 清空图层/回到开头/结尾处")
+            _debugLog("停止了 - 清空图层/回到开头or结尾处")
             status = .stopped
         } else {
-            _debugLog("停止？- 本来就空空如也")
+            _debugLog("停止了？- 本来就空空如也")
         }
         
         if isResetLoopCountWhenStopped {
@@ -740,12 +740,13 @@ public extension SVGAExPlayer {
         _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay, isNew: false)
     }
     
-    /// 重置当前SVGA（回到开头）
+    /// 重置当前SVGA（回到开头，重置完成次数）
     /// 如果设置过`startFrame`或`endFrame`，则从`leadingFrame`开始
     /// - Parameters:
     ///   - isAutoPlay: 是否自动开始播放
     func reset(isAutoPlay: Bool = true) {
         guard svgaSource.count > 0 else { return }
+        resetLoopCount()
         
         if entity == nil {
             _debugLog("重播 - 需要加载")
@@ -794,7 +795,8 @@ public extension SVGAExPlayer {
     
     /// 清空所有
     func clean() {
-        let needCallback = status != .idle
+        guard svgaSource.count > 0 else { return }
+        let needCallback = status != .stopped
         _hideIfNeeded { [weak self] in
             guard let self else { return }
             self._cleanAll()

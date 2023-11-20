@@ -139,6 +139,19 @@ extension ViewController: SVGAExPlayerDelegate {
         SVProgressHUD.showError(withStatus: status)
     }
     
+    /// SVGA动画执行回调【正在播放】
+    func svgaExPlayer(_ player: SVGAExPlayer,
+                      svga source: String,
+                      animationPlaying currentFrame: Int) {
+        guard player.isPlaying else { return }
+        progressView.progress = player.progress
+    }
+    
+    /// SVGA动画完成一次播放【正在播放】
+    func svgaExPlayer(_ player: SVGAExPlayer, svga source: String, animationDidFinishedOnce loopCount: Int) {
+        print("jpjpjp 完成第\(loopCount)次")
+    }
+    
     /// SVGA动画播放失败的回调【播放失败】
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
@@ -152,14 +165,6 @@ extension ViewController: SVGAExPlayerDelegate {
         }
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showError(withStatus: status)
-    }
-    
-    /// SVGA动画执行回调【正在播放】
-    func svgaExPlayer(_ player: SVGAExPlayer,
-                      svga source: String,
-                      animationPlaying currentFrame: Int) {
-        guard player.isPlaying else { return }
-        progressView.progress = player.progress
     }
 }
 
