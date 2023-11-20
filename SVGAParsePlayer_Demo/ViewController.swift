@@ -57,6 +57,16 @@ private extension ViewController {
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showInfo(withStatus: sender.isOn ? "开启反转播放" : "恢复正常播放")
         player.isReversing = sender.isOn
+        
+        // test
+//        SVProgressHUD.setDefaultMaskType(.none)
+//        if sender.isOn {
+//            SVProgressHUD.showInfo(withStatus: "只播放30~70帧")
+//            player.setStartFrame(30, endFrame: 100)
+//        } else {
+//            SVProgressHUD.showInfo(withStatus: "完整播放")
+//            player.resetStartFrameAndEndFrame()
+//        }
     }
     
     // MARK: - 播放
@@ -157,12 +167,14 @@ extension ViewController: SVGAExPlayerDelegate {
     func svgaExPlayer(_ player: SVGAExPlayer, svga source: String, animationDidFinishedOnce loopCount: Int) {
         print("jpjpjp 完成第\(loopCount)次")
         
+        // test
 //        if loopCount >= 3 {
 //            DispatchQueue.main.async {
 //                self.playLocal()
 //            }
 //        }
         
+        // 反复反转
 //        player.isReversing.toggle()
     }
     
