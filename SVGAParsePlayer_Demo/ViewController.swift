@@ -150,6 +150,14 @@ extension ViewController: SVGAExPlayerDelegate {
     /// SVGA动画完成一次播放【正在播放】
     func svgaExPlayer(_ player: SVGAExPlayer, svga source: String, animationDidFinishedOnce loopCount: Int) {
         print("jpjpjp 完成第\(loopCount)次")
+        
+//        if loopCount >= 3 {
+//            DispatchQueue.main.async {
+//                self.playLocal()
+//            }
+//        }
+        
+//        player.isReversing.toggle()
     }
     
     /// SVGA动画播放失败的回调【播放失败】
@@ -160,7 +168,7 @@ extension ViewController: SVGAExPlayerDelegate {
         switch error {
         case .nullEntity: status = "SVGA资源是空的，无法播放"
         case .nullSuperview: status = "父视图是空的，无法播放"
-        case .zeroPlayableFrames: status = "没有可播放帧数或只有一帧，无法开启定时器"
+        case .onlyOnePlayableFrame: status = "只有一帧可播放帧，无法形成动画"
         default: return
         }
         SVProgressHUD.setDefaultMaskType(.none)

@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 typedef NS_ENUM(NSUInteger, SVGARePlayerPlayError) {
     SVGARePlayerPlayError_NullEntity = 1,
     SVGARePlayerPlayError_NullSuperview = 2,
-    SVGARePlayerPlayError_ZeroPlayableFrames = 3,
+    SVGARePlayerPlayError_OnlyOnePlayableFrame = 3,
 };
 
 typedef NS_ENUM(NSUInteger, SVGARePlayerStoppedScene) {

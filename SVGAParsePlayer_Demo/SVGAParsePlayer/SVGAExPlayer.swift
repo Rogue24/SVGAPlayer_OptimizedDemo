@@ -623,8 +623,8 @@ extension SVGAExPlayer: SVGARePlayerDelegate {
     
     public func svgaRePlayer(_ player: SVGARePlayer, animationPlayFailed error: SVGARePlayerPlayError) {
         switch error {
-        case .zeroPlayableFrames:
-            _debugLog("没有可播放帧数或只有一帧，无法开启定时器：\(svgaSource)")
+        case .onlyOnePlayableFrame:
+            _debugLog("只有一帧可播放帧，无法形成动画：\(svgaSource)")
             status = .paused
         case .nullSuperview:
             _debugLog("父视图是空的，无法播放：\(svgaSource)")

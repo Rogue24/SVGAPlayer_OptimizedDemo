@@ -712,7 +712,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 - (BOOL)__checkIsCanDraw {
     if (self.videoItem == nil) {
-        _JPLog(@"[SVGARePlayer_%p] videoItem是空的，无法播放", self);
+//        _JPLog(@"[SVGARePlayer_%p] videoItem是空的，无法播放", self);
         if (self.delegate != nil && [self.delegate respondsToSelector:@selector(svgaRePlayer:animationPlayFailed:)]) {
             [self.delegate svgaRePlayer:self animationPlayFailed:SVGARePlayerPlayError_NullEntity];
         }
@@ -720,7 +720,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     }
     
     if (self.superview == nil) {
-        _JPLog(@"[SVGARePlayer_%p] superview是空的，无法播放", self);
+//        _JPLog(@"[SVGARePlayer_%p] superview是空的，无法播放", self);
         if (self.delegate != nil && [self.delegate respondsToSelector:@selector(svgaRePlayer:animationPlayFailed:)]) {
             [self.delegate svgaRePlayer:self animationPlayFailed:SVGARePlayerPlayError_NullSuperview];
         }
@@ -772,7 +772,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     if (self.isFinishedAll) { // 全部完成
         _loopCount = _loops;
         [self stopAnimation:_finishedAllScene];
-        _JPLog(@"[SVGARePlayer_%p] 全部播放完成 %zd", self, _loops);
+//        _JPLog(@"[SVGARePlayer_%p] 全部播完了 %zd", self, _loops);
         if (delegate != nil && [delegate respondsToSelector:@selector(svgaRePlayer:animationDidFinishedAll:)]) {
             [delegate svgaRePlayer:self animationDidFinishedAll:_loopCount];
         }
@@ -785,21 +785,34 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
             [delegate svgaRePlayer:self animationDidFinishedOnce:_loopCount];
         }
         
-        // 有可能在回调时修改了新的startFrame和endFrame，判断一下是否能继续
-        if (self.leadingFrame == self.trailingFrame) {
-            [self stopAnimation:SVGARePlayerStoppedScene_StepToTrailing];
-            _JPLog(@"[SVGARePlayer_%p] 没有可播放帧数或只有一帧，无法开启定时器", self);
+        NSInteger leadingFrame = self.leadingFrame;
+        NSInteger trailingFrame = self.trailingFrame;
+        // 有可能在回调时修改了新的startFrame和endFrame，得判断一下是否继续运行定时器
+        if (leadingFrame == trailingFrame) {
+            // 头部帧数与尾部帧数相同，说明只有一帧可播放帧，没必要运行定时器了
+            [self stepToFrame:trailingFrame];
+//            _JPLog(@"[SVGARePlayer_%p] 只有一帧可播放帧，无法形成动画", self);
             if (delegate != nil && [delegate respondsToSelector:@selector(svgaRePlayer:animationPlayFailed:)]) {
-                [delegate svgaRePlayer:self animationPlayFailed:SVGARePlayerPlayError_ZeroPlayableFrames];
+                [delegate svgaRePlayer:self animationPlayFailed:SVGARePlayerPlayError_OnlyOnePlayableFrame];
             }
             return;
         }
         
         // 回到开头
-        _currentFrame = self.leadingFrame;
+        // 有可能在回调时进行了【反转】，导致当前帧数与头部帧数相等，因此现在应该是跳去下一帧
+        if (_currentFrame == leadingFrame) {
+            // 能来到这里，证明至少有两帧，放心跳
+            if (_isReversing) {
+                leadingFrame -= 1;
+            } else {
+                leadingFrame += 1;
+            }
+        }
+        _currentFrame = leadingFrame;
     } // 开始下一次
     
     // 刷新最新帧
+//    _JPLog(@"[SVGARePlayer_%p] animating %zd", self, _currentFrame);
     [self __updateLayers];
     if (delegate != nil && [delegate respondsToSelector:@selector(svgaRePlayer:animationPlaying:)]) {
         [delegate svgaRePlayer:self animationPlaying:_currentFrame];
