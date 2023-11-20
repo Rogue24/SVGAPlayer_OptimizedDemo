@@ -245,6 +245,7 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 //    } else {
 //        progress = (float)(_currentFrame - _startFrame) / (float)playableFrames;
 //    }
+    
     // 包括正反序
     float progress = (float)(_currentFrame - _startFrame) / (float)playableFrames;
     
@@ -399,7 +400,8 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     [self __drawLayersIfNeeded:isNeedUpdate];
     if (![self __checkIsCanDraw]) return NO;
     
-    return [self __addLink];
+    [self __addLink];
+    return YES;
 }
 
 #pragma mark 跳至指定帧
@@ -430,11 +432,11 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
     if (![self __checkIsCanDraw]) return NO;
     
     if (andPlay) {
-        return [self __addLink];
+        [self __addLink];
     } else {
         if (isNeedUpdate) _JPLog(@"[SVGARePlayer_%p] 已跳至第%zd帧，并且不播放", self, frame);
-        return YES;
     }
+    return YES;
 }
 
 #pragma mark 暂停播放
@@ -732,13 +734,12 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 
 #pragma mark - Display Link
 
-- (BOOL)__addLink {
+- (void)__addLink {
     [self __removeLink];
 //    _JPLog(@"[SVGARePlayer_%p] 开启定时器，此时startFrame: %zd, endFrame: %zd, currentFrame: %zd, loopCount: %zd", self, self.startFrame, self.endFrame, self.currentFrame, self.loopCount);
     self.displayLink = [CADisplayLink displayLinkWithTarget:[_JPProxy proxyWithTarget:self] selector:@selector(__linkHandle)];
     self.displayLink.preferredFramesPerSecond = self.videoItem.FPS;
     [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:self.mainRunLoopMode];
-    return YES;
 }
 
 - (void)__removeLink {

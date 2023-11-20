@@ -273,9 +273,6 @@ class SVGAExPlayer: SVGARePlayer {
  * 原代理已被`self`遵守，请使用`myDelegate`来进行监听
  *  `@property (nonatomic, weak) id<SVGAOptimizedPlayerDelegate> delegate;`
  *
- * 无需设置，可在`stop(isClear: Bool)`控制是否清空
- *  `@property (nonatomic, assign) BOOL clearsAfterStop;`
- *
  * 不允许外部设置`videoItem`，内部已为其设置
  *  `@property (nonatomic, strong, nullable) SVGAVideoEntity *videoItem;`
  *  `- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem currentFrame:(NSInteger)currentFrame;`
@@ -290,7 +287,7 @@ class SVGAExPlayer: SVGARePlayer {
  * 与原播放逻辑互斥，请使用`pause()`进行暂停
  *  `- (void)pauseAnimation;`
  *
- * 与原播放逻辑互斥，请使用`stop(isClear: Bool)`进行停止
+ * 与原播放逻辑互斥，请使用`stop(with scene: SVGARePlayerStoppedScene)`进行停止
  *  `- (void)stopAnimation;`
  *  `- (void)stopAnimation:(BOOL)isClear;`
  */
@@ -796,7 +793,7 @@ public extension SVGAExPlayer {
         stop(with: userStoppedScene)
     }
     
-    /// 清空所有
+    /// 清空
     func clean() {
         guard svgaSource.count > 0 else { return }
         let needCallback = status != .stopped

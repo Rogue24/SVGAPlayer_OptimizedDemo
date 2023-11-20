@@ -22,7 +22,7 @@ class ViewController: UIViewController {
             }
         }
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -30,45 +30,51 @@ class ViewController: UIViewController {
         setupPlayer()
         setupProgressView()
         
+        writeBundleDataToCache("Rocket")
+        writeBundleDataToCache("Rose")
+        
         setupLoader()
         setupDownloader()
         setupCacheKeyGenerator()
-        
-        writeBundleDataToCache("Rocket")
-        writeBundleDataToCache("Rose")
     }
 }
 
-// MARK: - Player Actions
 private extension ViewController {
+    // MARK: - 播放远程SVGA
     @objc func playRemote() {
         let svga = RemoteSources.randomElement()!
         player.play(svga)
     }
 
+    // MARK: - 播放本地SVGA
     @objc func playLocal() {
         let svga = LocalSources.randomElement()!
         player.play(svga)
     }
     
+    // MARK: - 反转播放
     @objc func toggleReverse(_ sender: UISwitch) {
         SVProgressHUD.setDefaultMaskType(.none)
         SVProgressHUD.showInfo(withStatus: sender.isOn ? "开启反转播放" : "恢复正常播放")
         player.isReversing = sender.isOn
     }
     
+    // MARK: - 播放
     @objc func play() {
         player.play()
     }
     
+    // MARK: - 暂停
     @objc func pause() {
         player.pause()
     }
     
+    // MARK: - 重新开始
     @objc func reset() {
         player.reset(isAutoPlay: true)
     }
     
+    // MARK: - 停止
     @objc func stop() {
         player.stop()
     }
@@ -272,6 +278,26 @@ private extension ViewController {
         view.addSubview(progressView)
     }
     
+    func writeBundleDataToCache(_ resName: String) {
+        guard let url = Bundle.main.url(forResource: resName, withExtension: "svga") else {
+            JPrint(resName, "路径不存在")
+            return
+        }
+        
+        let cacheUrl = URL(fileURLWithPath: cacheFilePath(resName + ".svga"))
+        try? FileManager.default.removeItem(at: cacheUrl)
+        
+        do {
+            let data = try Data(contentsOf: url)
+            try data.write(to: cacheUrl)
+        } catch {
+            JPrint(resName, "写入错误：", error)
+        }
+    }
+}
+
+// MARK: - Setup SVGA Loader & Downloader & CacheKeyGenerator
+private extension ViewController {
     func setupLoader() {
         SVGAExPlayer.loader = { svgaSource, success, failure, forwardDownload, forwardLoadAsset in
             guard FileManager.default.fileExists(atPath: svgaSource) else {
@@ -313,22 +339,5 @@ private extension ViewController {
     
     func setupCacheKeyGenerator() {
         SVGAExPlayer.cacheKeyGenerator = { $0.md5 }
-    }
-    
-    func writeBundleDataToCache(_ resName: String) {
-        guard let url = Bundle.main.url(forResource: resName, withExtension: "svga") else {
-            JPrint(resName, "路径不存在")
-            return
-        }
-        
-        let cacheUrl = URL(fileURLWithPath: cacheFilePath(resName + ".svga"))
-        try? FileManager.default.removeItem(at: cacheUrl)
-        
-        do {
-            let data = try Data(contentsOf: url)
-            try data.write(to: cacheUrl)
-        } catch {
-            JPrint(resName, "写入错误：", error)
-        }
     }
 }

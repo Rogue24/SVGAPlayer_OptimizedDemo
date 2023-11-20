@@ -10,14 +10,18 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_ENUM(NSUInteger, SVGAVideoEntityError) {
+    /// 木有问题
     SVGAVideoEntityError_None = 0,
+    /// 画面没有尺寸
     SVGAVideoEntityError_ZeroVideoSize = 1,
+    /// FPS为0
     SVGAVideoEntityError_ZeroFPS = 2,
+    /// 帧数为0
     SVGAVideoEntityError_ZeroFrames = 3,
 };
 
 @interface SVGAVideoEntity (Extension)
-/// 最小帧数
+/// 最小帧数（0）
 @property (readonly) NSInteger minFrame;
 /// 最大帧数
 @property (readonly) NSInteger maxFrame;

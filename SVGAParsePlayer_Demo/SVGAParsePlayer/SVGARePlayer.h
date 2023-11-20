@@ -12,19 +12,25 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class SVGARePlayer;
 
+typedef void(^SVGARePlayerDrawingBlock)(CALayer *contentLayer, NSInteger frameIndex);
+
 typedef NS_ENUM(NSUInteger, SVGARePlayerPlayError) {
+    /// 没有SVGA资源
     SVGARePlayerPlayError_NullEntity = 1,
+    /// 没有父视图
     SVGARePlayerPlayError_NullSuperview = 2,
+    /// 只有一帧可播放帧（无法形成动画）
     SVGARePlayerPlayError_OnlyOnePlayableFrame = 3,
 };
 
 typedef NS_ENUM(NSUInteger, SVGARePlayerStoppedScene) {
+    /// 停止后清空图层
     SVGARePlayerStoppedScene_ClearLayers = 0,
+    /// 停止后留在最后
     SVGARePlayerStoppedScene_StepToTrailing = 1,
+    /// 停止后回到开头
     SVGARePlayerStoppedScene_StepToLeading = 2,
 };
-
-typedef void(^SVGARePlayerDrawingBlock)(CALayer *contentLayer, NSInteger frameIndex);
 
 @protocol SVGARePlayerDelegate <NSObject>
 @optional
@@ -47,9 +53,8 @@ typedef void(^SVGARePlayerDrawingBlock)(CALayer *contentLayer, NSInteger frameIn
 
 /// 主动调用`stopAnimation`后的情景
 @property (nonatomic, assign) SVGARePlayerStoppedScene userStoppedScene;
-/// 完成所有播放后（`loops > 0`）的情景
+/// 完成所有播放后（需要设置`loops > 0`）的情景
 @property (nonatomic, assign) SVGARePlayerStoppedScene finishedAllScene;
-
 
 /// 播放次数（大于0才会触发回调`svgaPlayerDidFinishedAllAnimation`）
 @property (nonatomic, assign) NSInteger loops;
@@ -83,24 +88,42 @@ typedef void(^SVGARePlayerDrawingBlock)(CALayer *contentLayer, NSInteger frameIn
 @property (readonly) BOOL isFinishedAll;
 
 #pragma mark 更换SVGA资源+设置播放区间
-- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem currentFrame:(NSInteger)currentFrame;
-- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem startFrame:(NSInteger)startFrame endFrame:(NSInteger)endFrame;
-- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem startFrame:(NSInteger)startFrame endFrame:(NSInteger)endFrame currentFrame:(NSInteger)currentFrame;
+- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem 
+        currentFrame:(NSInteger)currentFrame;
+
+- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem
+          startFrame:(NSInteger)startFrame
+            endFrame:(NSInteger)endFrame;
+
+- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem
+          startFrame:(NSInteger)startFrame 
+            endFrame:(NSInteger)endFrame
+        currentFrame:(NSInteger)currentFrame;
 
 #pragma mark 设置播放区间
+/// 重置起始帧数为最小帧数（0），结束帧数为最大帧数（videoItem.frames）
 - (void)resetStartFrameAndEndFrame;
+
+/// 设置起始帧数，结束帧数为最大帧数（videoItem.frames）
 - (void)setStartFrameUntilTheEnd:(NSInteger)startFrame;
+
+/// 设置结束帧数，起始帧数为最小帧数（0）
 - (void)setEndFrameFromBeginning:(NSInteger)endFrame;
-- (void)setStartFrame:(NSInteger)startFrame endFrame:(NSInteger)endFrame;
-- (void)setStartFrame:(NSInteger)startFrame endFrame:(NSInteger)endFrame currentFrame:(NSInteger)currentFrame;
+
+- (void)setStartFrame:(NSInteger)startFrame
+             endFrame:(NSInteger)endFrame;
+
+- (void)setStartFrame:(NSInteger)startFrame
+             endFrame:(NSInteger)endFrame
+         currentFrame:(NSInteger)currentFrame;
 
 #pragma mark 重置loopCount
 - (void)resetLoopCount;
 
-#pragma mark 开始播放（如果已经完成所有播放，则重置loopCount）
+#pragma mark 开始播放（如果已经完成所有播放，则重置loopCount；返回YES代表播放成功）
 - (BOOL)startAnimation;
 
-#pragma mark 跳至指定帧（如果已经完成所有播放，则重置loopCount）
+#pragma mark 跳至指定帧（如果已经完成所有播放，则重置loopCount；返回YES代表播放/跳转成功）
 - (BOOL)stepToFrame:(NSInteger)frame;
 - (BOOL)stepToFrame:(NSInteger)frame andPlay:(BOOL)andPlay;
 
