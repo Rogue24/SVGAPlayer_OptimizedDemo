@@ -472,9 +472,17 @@ private extension SVGAExPlayer {
     func _parseFromAsset(_ svgaSource: String,
                          _ asyncTag: UUID,
                          _ isAutoPlay: Bool) {
+        // PS：parser内部会自动补上".svga"后缀，如果本身就有该后缀，那就去掉再给parser
+        var source = svgaSource
+        var components = source.components(separatedBy: ".")
+        if components.count > 1 {
+            components.removeAll { $0 == "svga" }
+            source = components.joined(separator: ".")
+        }
+        
         let parser = SVGAParser()
         parser.enabledMemoryCache = isEnabledMemoryCache
-        parser.parse(withNamed: svgaSource, in: nil) { [weak self] entity in
+        parser.parse(withNamed: source, in: nil) { [weak self] entity in
             guard let self, self._asyncTag == asyncTag else { return }
             self._asyncTag = nil
             
