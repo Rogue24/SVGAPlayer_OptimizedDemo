@@ -170,7 +170,9 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 }
 
 - (void)dealloc {
-    [self stopAnimation:SVGARePlayerStoppedScene_ClearLayers];
+    [self __removeLink];
+    [self __stopAudios];
+    [self __clearLayers];
 //    _JPLog(@"[SVGARePlayer_%p] dealloc", self);
 }
 
@@ -451,20 +453,34 @@ static inline void _jp_dispatch_sync_on_main_queue(void (^block)(void)) {
 }
 
 - (void)stopAnimation:(SVGARePlayerStoppedScene)scene {
+    [self pauseAnimation];
+    
+    BOOL isClearLayers = _videoItem == nil || self.superview == nil;
+    NSInteger frame = 0;
     switch (scene) {
         case SVGARePlayerStoppedScene_StepToTrailing:
-            [self stepToFrame:self.trailingFrame];
+            // 停止后留在最后一帧
+            frame = self.trailingFrame;
             break;
             
         case SVGARePlayerStoppedScene_StepToLeading:
-            [self stepToFrame:self.leadingFrame];
+            // 停止后留在第一帧
+            frame = self.leadingFrame;
             break;
             
         default:
-            [self pauseAnimation];
-            [self __clearLayers];
-            _currentFrame = 0;
+            // 停止后清空图层
+            isClearLayers = YES;
             break;
+    }
+    
+    if (isClearLayers) {
+        _currentFrame = frame;
+        [self __clearLayers];
+    } else {
+        BOOL isNeedUpdate = _currentFrame != frame;
+        _currentFrame = frame;
+        [self __drawLayersIfNeeded:isNeedUpdate];
     }
 }
 
