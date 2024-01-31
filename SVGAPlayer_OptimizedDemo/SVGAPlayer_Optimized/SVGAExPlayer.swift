@@ -55,10 +55,16 @@ protocol SVGAExPlayerDelegate: NSObjectProtocol {
     
     // MARK: - 播放相关回调
     @objc optional
-    /// SVGA动画已准备好可播放【即将播放】
+    /// SVGA动画（新的本地/远程资源）已准备好可播放【即将播放】
+    /// - Parameters:
+    ///   - fromFrame: 从第几帧开始
+    ///   - isWillPlay: 是否即将开始播放
+    ///   - resetHandler: 用于重置「从第几帧开始」和「是否开始播放」，如需更改调用该闭包并传入新值即可
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
-                      readyForPlay isPlay: Bool)
+                      readyForPlayFromFrame fromFrame: Int,
+                      isWillPlay: Bool,
+                      resetHandler: @escaping (_ newFrame: Int, _ isPlay: Bool) -> Void)
     
     @objc optional
     /// SVGA动画执行回调【正在播放】
@@ -431,7 +437,7 @@ private extension SVGAExPlayer {
             
             self._debugLog("内部下载远程SVGA - 成功，但资源为空")
             self._cleanAll()
-            let error = NSError(domain: "SVGAParsePlayer", code: -3, userInfo: [NSLocalizedDescriptionKey: "下载的SVGA资源为空"])
+            let error = NSError(domain: "SVGAExPlayer", code: -3, userInfo: [NSLocalizedDescriptionKey: "下载的SVGA资源为空"])
             self._failedCallback(.dataLoadFailed(svgaSource, error))
             
         } failureBlock: { [weak self] e in
@@ -440,7 +446,7 @@ private extension SVGAExPlayer {
             
             self._debugLog("内部下载远程SVGA - 失败 \(svgaSource)")
             self._cleanAll()
-            let error = e ?? NSError(domain: "SVGAParsePlayer", code: -2, userInfo: [NSLocalizedDescriptionKey: "SVGA下载失败"])
+            let error = e ?? NSError(domain: "SVGAExPlayer", code: -2, userInfo: [NSLocalizedDescriptionKey: "SVGA下载失败"])
             self._failedCallback(.dataLoadFailed(svgaSource, error))
         }
     }
@@ -520,17 +526,23 @@ private extension SVGAExPlayer {
 // MARK: - 播放 | 停止 | 清空
 private extension SVGAExPlayer {
     func _playSVGA(fromFrame: Int, isAutoPlay: Bool, isNew: Bool) {
-        if isNew {
-            exDelegate?.svgaExPlayer?(self, svga: svgaSource, readyForPlay: isAutoPlay)
+        var kFrame = fromFrame
+        var isPlay = isAutoPlay
+        
+        if isNew, let exDelegate, let readyForPlay = exDelegate.svgaExPlayer(_:svga:readyForPlayFromFrame:isWillPlay:resetHandler:) {
+            readyForPlay(self, svgaSource, fromFrame, isAutoPlay, {
+                kFrame = $0
+                isPlay = $1
+            })
         }
         
-        guard step(toFrame: fromFrame, andPlay: isAutoPlay) else { return }
+        guard step(toFrame: kFrame, andPlay: isPlay) else { return }
         
-        if isAutoPlay {
-            _debugLog("成功跳至特定帧\(fromFrame)，并且自动播放 - 播放 \(svgaSource)")
+        if isPlay {
+            _debugLog("成功跳至特定帧\(kFrame)，并且开始播放 - 播放 \(svgaSource)")
             status = .playing
         } else {
-            _debugLog("成功跳至特定帧\(fromFrame)，并且不播放 - 暂停 \(svgaSource)")
+            _debugLog("成功跳至特定帧\(kFrame)，并且不播放 - 暂停 \(svgaSource)")
             status = .paused
         }
         
@@ -726,7 +738,7 @@ public extension SVGAExPlayer {
                 _debugLog("继续播放")
                 status = .playing
             }
-        default: 
+        default:
             play(fromFrame: currentFrame, isAutoPlay: true)
         }
     }
@@ -788,9 +800,11 @@ public extension SVGAExPlayer {
         guard svgaSource.count > 0 else { return }
         _hideIfNeeded { [weak self] in
             guard let self else { return }
+            let svgaSource = self.svgaSource
+            let loopCount = self.loopCount
             self._stopSVGA(scene)
-            self.exDelegate?.svgaExPlayer?(self, svga: self.svgaSource,
-                                           animationDidFinishedAll: self.loopCount,
+            self.exDelegate?.svgaExPlayer?(self, svga: svgaSource,
+                                           animationDidFinishedAll: loopCount,
                                            isUserStop: true)
         }
     }
@@ -804,13 +818,15 @@ public extension SVGAExPlayer {
     /// 清空
     func clean() {
         guard svgaSource.count > 0 else { return }
-        let needCallback = status != .stopped
         _hideIfNeeded { [weak self] in
             guard let self else { return }
+            let isNeedCallback = self.status != .stopped
+            let svgaSource = self.svgaSource
+            let loopCount = self.loopCount
             self._cleanAll()
-            guard needCallback else { return }
-            self.exDelegate?.svgaExPlayer?(self, svga: self.svgaSource,
-                                           animationDidFinishedAll: self.loopCount,
+            guard isNeedCallback else { return }
+            self.exDelegate?.svgaExPlayer?(self, svga: svgaSource,
+                                           animationDidFinishedAll: loopCount,
                                            isUserStop: true)
         }
     }
