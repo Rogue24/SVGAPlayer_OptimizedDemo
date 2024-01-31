@@ -60,6 +60,7 @@ protocol SVGAExPlayerDelegate: NSObjectProtocol {
     ///   - fromFrame: 从第几帧开始
     ///   - isWillPlay: 是否即将开始播放
     ///   - resetHandler: 用于重置「从第几帧开始」和「是否开始播放」，如需更改调用该闭包并传入新值即可
+    /// - Note: 仅在资源【首次】加载成功并且即将播放前调用【一次】，之后该资源则无需再次加载，播放同步执行，因此不会再回调该方法，除非切换资源播放
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       readyForPlayFromFrame fromFrame: Int,
