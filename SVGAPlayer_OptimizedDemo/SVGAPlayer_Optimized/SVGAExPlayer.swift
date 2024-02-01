@@ -75,19 +75,21 @@ protocol SVGAExPlayerDelegate: NSObjectProtocol {
     
     @objc optional
     /// SVGA动画完成一次播放【正在播放】
+    /// - Note: 每一次动画的完成（无论是否循环播放）都会回调；若是「用户手动停止」则不会回调。
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       animationDidFinishedOnce loopCount: Int)
     
     @objc optional
-    /// SVGA动画结束（用户手动停止 or 设置了`loops`并且达到次数）【结束播放】
+    /// SVGA动画完成所有播放【结束播放】
+    /// - Note: 设置了`loops > 0`并且达到次数才会回调；若是「用户手动停止」或`loops = 0`则不会回调。
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
-                      animationDidFinishedAll loopCount: Int,
-                      isUserStop: Bool)
+                      animationDidFinishedAll loopCount: Int)
     
     @objc optional
     /// SVGA动画播放失败的回调【播放失败】
+    /// - Note: 尝试播放时发现「没有SVGA资源」或「没有父视图」、SVGA资源只有一帧可播放帧（无法形成动画）就会触发该回调。
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       animationPlayFailed error: SVGARePlayerPlayError)
@@ -138,6 +140,10 @@ class SVGAExPlayer: SVGARePlayer {
     /// 自定义缓存键生成器
     public static var cacheKeyGenerator: CacheKeyGenerator? = nil
     public typealias CacheKeyGenerator = (_ svgaSource: String) -> String
+    
+    // MARK: - 用户【手动调用】停止/清空的回调
+    /// 执行`stop(...)`or`clean(...)` 完成后的闭包
+    public typealias UserStopCompletion = (_ svgaSource: String, _ loopCount: Int) -> Void
     
     // MARK: - 可读可写属性
     /// 代理（代替原`delegate`）
@@ -277,7 +283,7 @@ class SVGAExPlayer: SVGARePlayer {
 
 // MARK: - 与父类互斥的属性和方法
 /**
- * 原代理已被`self`遵守，请使用`myDelegate`来进行监听
+ * 原代理已被`self`遵守，请使用`exDelegate`来进行监听
  *  `@property (nonatomic, weak) id<SVGAOptimizedPlayerDelegate> delegate;`
  *
  * 不允许外部设置`videoItem`，内部已为其设置
@@ -635,7 +641,7 @@ extension SVGAExPlayer: SVGARePlayerDelegate {
         _hideIfNeeded { [weak self] in
             guard let self else { return }
             self._afterStopSVGA()
-            self.exDelegate?.svgaExPlayer?(self, svga: svgaSource, animationDidFinishedAll: loopCount, isUserStop: false)
+            self.exDelegate?.svgaExPlayer?(self, svga: svgaSource, animationDidFinishedAll: loopCount)
         }
     }
     
@@ -657,6 +663,7 @@ extension SVGAExPlayer: SVGARePlayerDelegate {
 
 // MARK: - API
 public extension SVGAExPlayer {
+    // MARK: Play
     /// 播放目标SVGA
     /// - Parameters:
     ///   - svgaSource: SVGA资源路径
@@ -761,6 +768,20 @@ public extension SVGAExPlayer {
         _playSVGA(fromFrame: fromFrame, isAutoPlay: isAutoPlay, isNew: false)
     }
     
+    // MARK: Pause
+    /// 暂停
+    func pause() {
+        guard svgaSource.count > 0 else { return }
+        guard isPlaying else {
+            _isWillAutoPlay = false
+            return
+        }
+        _debugLog("暂停")
+        pauseAnimation()
+        status = .paused
+    }
+    
+    // MARK: Reset
     /// 重置当前SVGA（回到开头，重置完成次数）
     /// 如果设置过`startFrame`或`endFrame`，则从`leadingFrame`开始
     /// - Parameters:
@@ -779,56 +800,39 @@ public extension SVGAExPlayer {
         _playSVGA(fromFrame: leadingFrame, isAutoPlay: isAutoPlay, isNew: false)
     }
     
-    /// 暂停
-    func pause() {
-        guard svgaSource.count > 0 else { return }
-        guard isPlaying else {
-            _isWillAutoPlay = false
-            return
-        }
-        _debugLog("暂停")
-        pauseAnimation()
-        status = .paused
-    }
-    
+    // MARK: Stop & Clean
     /// 停止
     /// - Parameters:
     ///   - scene: 停止后的场景
     ///     - clearLayers: 清空图层
     ///     - stepToTrailing: 去到尾帧
     ///     - stepToLeading: 回到头帧
-    func stop(with scene: SVGARePlayerStoppedScene) {
+    func stop(then scene: SVGARePlayerStoppedScene, completion: UserStopCompletion? = nil) {
         guard svgaSource.count > 0 else { return }
         _hideIfNeeded { [weak self] in
             guard let self else { return }
             let svgaSource = self.svgaSource
             let loopCount = self.loopCount
             self._stopSVGA(scene)
-            self.exDelegate?.svgaExPlayer?(self, svga: svgaSource,
-                                           animationDidFinishedAll: loopCount,
-                                           isUserStop: true)
+            completion?(svgaSource, loopCount)
         }
     }
     
     /// 停止
-    /// - 等同于:`stop(with scene: userStoppedScene)`
-    func stop() {
-        stop(with: userStoppedScene)
+    /// - 等同于:`stop(then: userStoppedScene, completion: completion)`
+    func stop(completion: UserStopCompletion? = nil) {
+        stop(then: userStoppedScene, completion: completion)
     }
     
     /// 清空
-    func clean() {
+    func clean(completion: UserStopCompletion? = nil) {
         guard svgaSource.count > 0 else { return }
         _hideIfNeeded { [weak self] in
             guard let self else { return }
-            let isNeedCallback = self.status != .stopped
             let svgaSource = self.svgaSource
             let loopCount = self.loopCount
             self._cleanAll()
-            guard isNeedCallback else { return }
-            self.exDelegate?.svgaExPlayer?(self, svga: svgaSource,
-                                           animationDidFinishedAll: loopCount,
-                                           isUserStop: true)
+            completion?(svgaSource, loopCount)
         }
     }
 }
