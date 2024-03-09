@@ -61,16 +61,113 @@ player.play("your_animation_path", fromFrame: 0, isAutoPlay: true)
 - `fromFrame`: Start from which frame.
 - `isAutoPlay`: Whether to start playing automatically after loading.
 
-Internally, `SVGAParser` will be automatically called for loading "remote/local" SVGA resources. So, calling this method will not start playing immediately; there will be a loading process.
+The `SVGAParser` will be automatically invoked internally to load "remote/local" SVGA resources, so calling this method will not play immediately, as there will be a loading process.
 
-After loading, you can choose whether to play automatically. You can receive callbacks for status changes by conforming to `SVGAExPlayerDelegate`.
+After loading, you can choose whether to play automatically. Specific states can be observed by conforming to `SVGAExPlayerDelegate`, where you can receive callbacks when the status changes:
 
-If you already have an existing `SVGAVideoEntity` object, you can play directly using that object:
+```swift
+/// Status changes [Status update]
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  statusDidChanged status: SVGAExPlayerStatus,
+                  oldStatus: SVGAExPlayerStatus)
+```
+
+Additionally, there are corresponding callbacks for loading failure and completion in `SVGAExPlayerDelegate`:
+
+```swift
+/// Unknown source of SVGA [Unable to play]
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  unknownSvga source: String)
+
+/// Failed to load SVGA resource [Unable to play]
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  dataLoadFailed error: Error)
+
+/// Failed to parse loaded SVGA resource [Unable to play]
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  dataParseFailed error: Error)
+
+/// Failed to parse local SVGA resource [Unable to play]
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  assetParseFailed error: Error)
+
+/// Invalid SVGA resource [Unable to play]
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  entity: SVGAVideoEntity,
+                  invalid error: SVGAVideoEntityError)
+
+/// Successfully parsed SVGA resource [Can play]
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  parseDone entity: SVGAVideoEntity)
+```
+
+Of course, there are also callbacks related to playback:
+
+```swift
+/// SVGA animation (local/remote resource) is ready to play [About to play]
+/// - Parameters:
+///   - isNewSource: Whether it is a new resource (if the resource needs to be loaded for playback, or if a different `entity` is switched, this value is `true`)
+///   - fromFrame: Starting from which frame
+///   - isWillPlay: Whether it is about to start playing
+///   - resetHandler: Used to reset "from which frame to start" and "whether to start playing". Call this closure and pass in new values if changes are needed.
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  readyForPlay isNewSource: Bool,
+                  fromFrame: Int,
+                  isWillPlay: Bool,
+                  resetHandler: @escaping (_ newFrame: Int, _ isPlay: Bool) -> Void)
+
+/// Callback when SVGA animation is being played [Playing]
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  animationPlaying currentFrame: Int)
+
+/// SVGA animation completes one playback [Playing]
+/// - Note: Each completion of animation (regardless of whether it is looped) will trigger a callback; it will not be called if "manually stopped" by the user.
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  animationDidFinishedOnce loopCount: Int)
+
+/// SVGA animation completes all playback [Playback ends]
+/// - Note: It will be called only if `loops > 0` and the specified number of loops is reached; it will not be called if "manually stopped" by the user or `loops = 0`.
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  animationDidFinishedAll loopCount: Int)
+
+/// Callback for SVGA animation playback failure [Playback failed]
+/// - Note: This callback is triggered when attempting to play if there is "no SVGA resource" or "no parent view", or if the SVGA resource has only one playable frame (unable to form an animation).
+@objc optional
+func svgaExPlayer(_ player: SVGAExPlayer,
+                  svga source: String,
+                  animationPlayFailed error: SVGARePlayerPlayError)
+```
+
+* Methods of `SVGAExPlayerDelegate` are all optional. For specific usage, refer this demo.
+
+If there is already an existing `SVGAVideoEntity` object, you can directly use it for playback:
 
 ```swift
 let entity: SVGAVideoEntity = ...
 player.play(with: entity, fromFrame: 0, isAutoPlay: true)
 ```
+
+* When using this method for playback, `svgaSource` is the memory address of the `SVGAVideoEntity` object.
 
 ## Loading Optimization
 
@@ -95,6 +192,12 @@ SVGAExPlayer.downloader = { svgaSource, success, failure in
     }
 }
 ```
+
+* Implement the `SVGAExPlayer.downloader` closure.
+
+Note that if the same resource path is being played or has already been loaded, it won't be reloaded. Internally, it checks whether the resource path is the same to avoid duplicate loading operations. However, if a new resource path is provided, it will clear the previous resource and load the new one to ensure that the same resource won't be loaded repeatedly.
+
+**📢 Note**: Internally, it determines whether to call the downloader for download by checking whether the resource path has the prefixes `http://` and `https://`. Otherwise, it will use the local resource loading method.
 
 #### Custom Resource Loader
 
@@ -121,6 +224,9 @@ SVGAExPlayer.loader = { svgaSource, success, failure, forwardDownload, forwardLo
     }
 }
 ```
+
+* `forwardDownload`: The original remote loading method within `SVGAExPlayer` (if `SVGAExPlayer.downloader` is implemented, this closure will be called).
+* `forwardLoadAsset`: The original local resource loading method within `SVGAExPlayer`.
 
 #### Custom Cache Key Generator
 
