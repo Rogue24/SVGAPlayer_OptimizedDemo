@@ -1,6 +1,8 @@
-# SVGAExPlayer
+# SVGARePlayer & SVGAExPlayer
 
-`SVGAExPlayer` is an enhanced version based on [SVGAPlayer](https://github.com/svga/SVGAPlayer-iOS), refactored and improved.
+`SVGARePlayer` is a new SVGA player refactored based on `SVGAPlayer`. Initially, the code was completely copied from `SVGAPlayer`, and then refactored on top of it. It was also written in Objective-C. The external interface remains basically consistent with `SVGAPlayer`, while internally it has been refactored, adjusted, enhanced, and encapsulated according to my own style. This was done to gradually replace the original `SVGAPlayer` in the project while maintaining compatibility.
+
+`SVGAExPlayer`, on the other hand, is an enhanced version of `SVGARePlayer` upgraded to Swift. The following is mainly about the introduction of `SVGAExPlayer`.
 
 [中文](https://juejin.cn/post/7270698918286147620)
 
