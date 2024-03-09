@@ -174,8 +174,6 @@ Customizable settings:
 ```swift
 /// Whether to use animated transitions (default is `false`)
 /// - If `true`, there will be fade in/out effect in "changing SVGA" and "play/stop" scenes
-
-
 public var isAnimated = false
 
 /// Whether to hide itself when in a "stopped" state (default is `false`)
