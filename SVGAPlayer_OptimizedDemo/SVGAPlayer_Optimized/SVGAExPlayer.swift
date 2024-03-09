@@ -10,86 +10,92 @@ import UIKit
 @objc public
 protocol SVGAExPlayerDelegate: NSObjectProtocol {
     // MARK: - 状态更新的回调
-    @objc optional
+    
     /// 状态发生改变【状态更新】
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       statusDidChanged status: SVGAExPlayerStatus,
                       oldStatus: SVGAExPlayerStatus)
     
+    
     // MARK: - 资源加载/解析相关回调
-    @objc optional
+    
     /// SVGA未知来源【无法播放】
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       unknownSvga source: String)
     
-    @objc optional
     /// SVGA资源加载失败【无法播放】
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       dataLoadFailed error: Error)
     
-    @objc optional
     /// 加载的SVGA资源解析失败【无法播放】
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       dataParseFailed error: Error)
     
-    @objc optional
     /// 本地SVGA资源解析失败【无法播放】
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       assetParseFailed error: Error)
     
-    @objc optional
     /// SVGA资源无效【无法播放】
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       entity: SVGAVideoEntity,
                       invalid error: SVGAVideoEntityError)
     
-    @objc optional
     /// SVGA资源解析成功【可以播放】
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       parseDone entity: SVGAVideoEntity)
     
+    
     // MARK: - 播放相关回调
-    @objc optional
-    /// SVGA动画（新的本地/远程资源）已准备好可播放【即将播放】
+    
+    /// SVGA动画（本地/远程资源）已准备就绪即可播放【即将播放】
     /// - Parameters:
+    ///   - isNewSource: 是否为新的资源（播放的资源需要加载、或者切换不同的`entity`则该值为`true`）
     ///   - fromFrame: 从第几帧开始
     ///   - isWillPlay: 是否即将开始播放
     ///   - resetHandler: 用于重置「从第几帧开始」和「是否开始播放」，如需更改调用该闭包并传入新值即可
-    /// - Note: 仅在资源【首次】加载成功并且即将播放前调用【一次】，之后该资源则无需再次加载，播放同步执行，因此不会再回调该方法，除非切换资源播放。
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
-                      readyForPlayFromFrame fromFrame: Int,
+                      readyForPlay isNewSource: Bool,
+                      fromFrame: Int,
                       isWillPlay: Bool,
                       resetHandler: @escaping (_ newFrame: Int, _ isPlay: Bool) -> Void)
     
-    @objc optional
     /// SVGA动画执行回调【正在播放】
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       animationPlaying currentFrame: Int)
     
-    @objc optional
     /// SVGA动画完成一次播放【正在播放】
     /// - Note: 每一次动画的完成（无论是否循环播放）都会回调；若是「用户手动停止」则不会回调。
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       animationDidFinishedOnce loopCount: Int)
     
-    @objc optional
     /// SVGA动画完成所有播放【结束播放】
     /// - Note: 设置了`loops > 0`并且达到次数才会回调；若是「用户手动停止」或`loops = 0`则不会回调。
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       animationDidFinishedAll loopCount: Int)
     
-    @objc optional
     /// SVGA动画播放失败的回调【播放失败】
     /// - Note: 尝试播放时发现「没有SVGA资源」或「没有父视图」、SVGA资源只有一帧可播放帧（无法形成动画）就会触发该回调。
+    @objc optional
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       animationPlayFailed error: SVGARePlayerPlayError)
@@ -536,8 +542,8 @@ private extension SVGAExPlayer {
         var kFrame = fromFrame
         var isPlay = isAutoPlay
         
-        if isNew, let exDelegate, let readyForPlay = exDelegate.svgaExPlayer(_:svga:readyForPlayFromFrame:isWillPlay:resetHandler:) {
-            readyForPlay(self, svgaSource, fromFrame, isAutoPlay, {
+        if let exDelegate, let readyForPlay = exDelegate.svgaExPlayer(_:svga:readyForPlay:fromFrame:isWillPlay:resetHandler:) {
+            readyForPlay(self, svgaSource, isNew, fromFrame, isAutoPlay, {
                 kFrame = $0
                 isPlay = $1
             })
