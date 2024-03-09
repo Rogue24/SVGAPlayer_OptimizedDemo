@@ -1,22 +1,23 @@
-# SVGAParsePlayer
+# SVGAExPlayer
 
-Convenient SVGA Player, is a secondary encapsulation of [SVGAPlayer](https://github.com/svga/SVGAPlayer-iOS).
+`SVGAExPlayer` is an enhanced version based on [SVGAPlayer](https://github.com/svga/SVGAPlayer-iOS), refactored and improved.
 
 [中文](https://juejin.cn/post/7270698918286147620)
 
-    Feature:
-        ✅ Built-in SVGA parser;
-        ✅ With playback status and controllable;
-        ✅ Customizable downloader;
-        ✅ Prevent duplicate loading;
-        ✅ Compatible with OC & Swift;
-        ✅ The API is simple and easy to use.
+    Features:
+        ✅ Built-in SVGA parser.
+        ✅ Play state with control.
+        ✅ Customizable downloader & loader.
+        ✅ Prevent duplicate loading.
+        ✅ Mute at any time.
+        ✅ Reverse playback at any time.
+        ✅ Set playback range at any time.
+        ✅ Compatible with both Objective-C and Swift.
+        ✅ Simple and easy-to-use API.
 
 ![example](https://github.com/Rogue24/JPCover/raw/master/SVGAParsePlayer_Demo/example.gif)
 
-## Basic Use
-
-Original usage:
+`SVGAPlayer` is an old third-party library, and the author hasn't updated it for a long time. It's quite cumbersome to use. The original usage:
 
 ```swift
 let player = SVGAPlayer()
@@ -27,14 +28,14 @@ override func viewDidLoad() {
     player.frame = CGRect(x: 100, y: 100, width: 100, height: 100)
     view.addSubview(player)
 
-    // Creating an SVGA animation parser
+    // Create SVGA animation parser
     let parser = SVGAParser()
     
     // Load SVGA animation file
     parser.parse(withNamed: "your_animation_file", in: nil) { [weak self] videoItem in
         guard let self, videoItem else { return }
         
-        // Load SVGA animation into the player
+        // Load SVGA animation into player
         self.player.videoItem = videoItem
         
         // Start playing animation
@@ -43,70 +44,42 @@ override func viewDidLoad() {
 }
 ```
 
-`SVGAParsePlayer` itself inherits from `SVGAPlayer`, and the basic setup remains the same as before. The main difference lies in the usage of the API, which has become more user-friendly:
+To be honest, its performance is not as good as [Lottie](https://github.com/airbnb/lottie-ios), but I have to use it for the project. To make it more convenient to use, I decided to refactor it.
+
+## Basic Usage
+
+`SVGAExPlayer` inherits from `SVGARePlayer` (which is a completely rewritten new player based on the original `SVGAPlayer` with almost identical API, but internally optimized). Basic setup is the same as the parent class, but the usage of API is different, making it easier to use.
+
+To load and play:
 
 ```swift
-/// Play SVGA
-/// - Parameters:
-///   - fromFrame: Starting from frame
-///   - isAutoPlay: Automatically start playing after loading
 player.play("your_animation_path", fromFrame: 0, isAutoPlay: true)
+```
 
-/// Play SVGA directly through SVGAVideoEntity
-/// - Parameters:
-///   - fromFrame: Starting from frame
-///   - isAutoPlay: Automatically start playing after loading
-/// If played using this method, the `svgaSource` would be the memory address of the `entity` object.
+- `fromFrame`: Start from which frame.
+- `isAutoPlay`: Whether to start playing automatically after loading.
+
+Internally, `SVGAParser` will be automatically called for loading "remote/local" SVGA resources. So, calling this method will not start playing immediately; there will be a loading process.
+
+After loading, you can choose whether to play automatically. You can receive callbacks for status changes by conforming to `SVGAExPlayerDelegate`.
+
+If you already have an existing `SVGAVideoEntity` object, you can play directly using that object:
+
+```swift
 let entity: SVGAVideoEntity = ...
 player.play(with: entity, fromFrame: 0, isAutoPlay: true)
-
-/// Play the current SVGA (starting from the current frame)
-player.play()
-
-/// Play current SVGA
-/// - Parameters:
-///  - fromFrame: Starting from frame
-///  - isAutoPlay: Automatically start playing after loading
-player.play(fromFrame: 0, isAutoPlay: true)
-
-/// Pause playback
-player.pause()
-
-/// Reset current SVGA (return to beginning)
-/// - Parameters:
-///   - isAutoPlay: Automatically start playing after loading
-player.reset(isAutoPlay: false)
-
-/// Stop playing
-/// - Parameters:
-///  - isClear: is clear SVGA resources (if cleared, resources will need to be reloaded for next playback)
-player.stop(isClear: false)
 ```
 
-### Customizable settings
+## Loading Optimization
+
+#### Custom Remote Resource Downloader
+
+For loading remote SVGA resources, internally it uses the built-in download method of `SVGAParser`. If you need to define your own downloading method (e.g., loading cached resources), you can define a downloader:
 
 ```swift
-/// Is there an animated transition
-/// - If it is' true ', it will have a fading effect in and out in the scene of' replacing SVGA 'and' playing/stopping '
-var isAnimated = false
-
-/// Whether to hide oneself in idle/stopped state
-var isHidesWhenStopped = false
-
-/// (SVGAParser)Enable Memory Caching 
-var isEnabledMemoryCache = false
-```
-
-## Load optimization
-
-Just to clarify, if you're playing the same resource path and the resource is either in the process of loading or has already been loaded, it won't reload redundantly. Internally, it determines whether the SVGA resource is the same based on the resource path. Only when a new resource path is provided will the previous resource be cleared to load the new one. This is to ensure that the same resource is not loaded repeatedly.
-
-Loading remote SVGA resources involves utilizing the built-in downloading method of the `SVGAParser`. If you require a customized downloading approach, such as loading cached resources, you can define your own downloader:
-
-```swift
-SVGAParsePlayer.downloader = { svgaSource, success, failure in
+SVGAExPlayer.downloader = { svgaSource, success, failure in
     guard let url = URL(string: svgaSource) else {
-        failure(NSError(domain: "SVGAParsePlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "Error SVGA Path"]))
+        failure(NSError(domain: "SVGAExPlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid path"]))
         return
     }
     
@@ -120,24 +93,24 @@ SVGAParsePlayer.downloader = { svgaSource, success, failure in
     }
 }
 ```
-- Simply implement the closure `SVGAParsePlayer.downloader`.
 
-Note: Internally, the downloader is invoked for downloading by determining whether the resource path includes the `http://` and `https://` prefixes; otherwise, the local resource loading method will be used.
+#### Custom Resource Loader
 
-If you want to have full control over the loading process, you can implement the closure `SVGAParsePlayer.loader` yourself:
+If you want complete control over the loading process, you can implement `SVGAExPlayer.loader`:
+
 ```swift
-SVGAParsePlayer.loader = { svgaSource, success, failure, forwardDownload, forwardLoadAsset in
-    // Determine if the SVGA is from the disk.
+SVGAExPlayer.loader = { svgaSource, success, failure, forwardDownload, forwardLoadAsset in
+    // Check if it's a disk SVGA
     guard FileManager.default.fileExists(atPath: svgaSource) else {
         if svgaSource.hasPrefix("http://") || svgaSource.hasPrefix("https://") {
-            forwardDownload(svgaSource)
+            forwardDownload(svgaSource) // Call the internal remote loading method
         } else {
-            forwardLoadAsset(svgaSource)
+            forwardLoadAsset(svgaSource) // Call the internal local resource loading method
         }
         return
     }
-    
-    // Load the SVGA from the disk.
+            
+    // Load disk SVGA
     do {
         let data = try Data(contentsOf: URL(fileURLWithPath: svgaSource))
         success(data)
@@ -146,22 +119,116 @@ SVGAParsePlayer.loader = { svgaSource, success, failure, forwardDownload, forwar
     }
 }
 ```
-- forwardDownload: The original remote loading method within `SVGAParsePlayer` (if `SVGAParsePlayer.downloader` is implemented, this closure is called).
-- forwardLoadAsset: The original local resource loading method within `SVGAParsePlayer`.
 
-## Mutually exclusive API
+#### Custom Cache Key Generator
 
-Since `SVGAParsePlayer` inherently inherits from `SVGAPlayer`, in order to prevent errors, refrain from invoking the original APIs of `SVGAPlayer`:
+After successful loading, it will use the default caching method (`NSCache`) for caching, with the SVGA path as the key. If you need a custom cache key, you can implement `SVGAExPlayer.cacheKeyGenerator`:
+
+```swift
+SVGAExPlayer.cacheKeyGenerator = { svgaSource in
+    return svgaSource.md5 // Encrypt using MD5
+}
+```
+
+## Other APIs and Settings
+
+```swift
+/// Play the current SVGA (from the current frame)
+func play()
+
+/// Play the current SVGA
+/// - Parameters:
+///   - fromFrame: From which frame to start
+///   - isAutoPlay: Whether to start playing automatically
+func play(fromFrame: Int, isAutoPlay: Bool) 
+
+/// Reset the current SVGA (back to the beginning, reset completion count)
+/// If `startFrame` or `endFrame` is set, it starts from `leadingFrame`
+/// - Parameters:
+///   - isAutoPlay: Whether to start playing automatically
+func reset(isAutoPlay: Bool = true) 
+
+/// Pause
+func pause() 
+
+/// Stop
+/// - Parameters:
+///   - scene: Stopped scene
+///     - clearLayers: Clear layers
+///     - stepToTrailing: Go to the trailing frame
+///     - stepToLeading: Back to the leading frame
+func stop(then scene: SVGARePlayerStoppedScene, completion: UserStopCompletion? = nil)
+    
+/// Stop
+/// - Equivalent to:`stop(then: userStoppedScene, completion: completion)`
+func stop(completion: UserStopCompletion? = nil)
+    
+/// Clean
+func clean(completion: UserStopCompletion? = nil)
+```
+
+* As calling play methods won't start playing immediately, if you call the play method again while loading and the `fromFrame` and `isAutoPlay` are different, `fromFrame` and `isAutoPlay` will be used for subsequent operations according to the latest settings.
+
+Customizable settings:
+
+```swift
+/// Whether to use animated transitions (default is `false`)
+/// - If `true`, there will be fade in/out effect in "changing SVGA" and "play/stop" scenes
+
+
+public var isAnimated = false
+
+/// Whether to hide itself when in a "stopped" state (default is `false`)
+public var isHidesWhenStopped = false
+
+/// Whether to reset `loopCount` when in a "stopped" state (default is `true`)
+public var isResetLoopCountWhenStopped = true
+
+/// Whether to enable memory cache (mainly for `SVGAParser`, default is `false`)
+public var isEnabledMemoryCache = false
+
+/// Whether to print debug logs (only in `DEBUG` environment, default is `false`)
+public var isDebugLog = false
+```
+
+## Mutually Exclusive APIs
+
+As `SVGAExPlayer` inherits from `SVGARePlayer`, to avoid errors, do not call the following APIs of `SVGARePlayer`:
 
 ```objc
 @property (nonatomic, weak) id<SVGAPlayerDelegate> delegate;
 
-- (void)startAnimation;
-- (void)startAnimationWithRange:(NSRange)range reverse:(BOOL)reverse;
+- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem
+        currentFrame:(NSInteger)currentFrame;
+- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem
+          startFrame:(NSInteger)startFrame
+            endFrame:(NSInteger)endFrame;
+- (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem
+          startFrame:(NSInteger)startFrame 
+            endFrame:(NSInteger)endFrame
+        currentFrame:(NSInteger)currentFrame;
+        
+- (BOOL)startAnimation;
+- (BOOL)stepToFrame:(NSInteger)frame;
+- (BOOL)stepToFrame:(NSInteger)frame andPlay:(BOOL)andPlay;
 - (void)pauseAnimation;
 - (void)stopAnimation;
-- (void)clear;
-- (void)stepToFrame:(NSInteger)frame andPlay:(BOOL)andPlay;
-- (void)stepToPercentage:(CGFloat)percentage andPlay:(BOOL)andPlay;
+- (void)stopAnimation:(SVGARePlayerStoppedScene)scene;
 ```
-- The original `delegate` has been assigned to conform to itself. If you need to listen to the previous delegate methods, use `myDelegate`, which is the `SVGAParsePlayerDelegate`. This includes both the methods from the original delegate and additional callback methods (refer to the declaration for specifics).
+
+* The original `delegate` is retained by conforming to `exDelegate`. All methods of the original `delegate` and the above callbacks are included.
+
+Since we don't want to use the original APIs, why did we use inheritance from `SVGARePlayer`?
+
+1. For consistent basic setup with the previous version.
+2. To use it as a UIView without an extra layer, minimizing the number of layers as much as possible.
+
+## Conclusion
+
+That's all for the introduction. Generally speaking, [SVGAPlayer](https://github.com/svga/SVGAPlayer-iOS) is lighter than `Lottie`, suitable for scenarios with fewer animations. But if you need many and complex animations, I personally recommend [Lottie](https://github.com/airbnb/lottie-ios). Its architecture and performance are much better than `SVGAPlayer`, and most importantly, `Lottie` has been maintained and updated, while `SVGAPlayer` is no longer updated.
+
+My `SVGARePlayer` is a refactored version based on `SVGAPlayer`, and `SVGAExPlayer` is an enhanced version of `SVGARePlayer`. Besides retaining the original functionality, I mainly optimized "loading prevention" and "API simplification".
+
+If you need to use it, you can directly copy these files from the `SVGAPlayer_Optimized` folder in this demo to your project:
+
+![main_files](https://github.com/Rogue24/JPCover/raw/master/SVGAParsePlayer_Demo/main_files.jpg)
