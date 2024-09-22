@@ -332,7 +332,7 @@ As `SVGAExPlayer` inherits from `SVGARePlayer`, to avoid errors, do not call the
 - (void)stopAnimation:(SVGARePlayerStoppedScene)scene;
 ```
 
-* `delegate`: The original delegate is implemented by `self`. If you need to listen to the previous `delegate` methods, use `exDelegate`.
+* `delegate`: The original delegate is implemented by `self`. If you need to listen to the previous delegate methods, use `exDelegate`.
 
     * This refers to `SVGAExPlayerDelegate`, which includes the methods from the original delegate as well as the additional callback methods listed above.
     

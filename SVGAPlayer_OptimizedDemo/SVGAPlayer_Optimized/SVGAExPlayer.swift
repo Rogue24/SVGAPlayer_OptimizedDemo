@@ -358,7 +358,7 @@ class SVGAExPlayer: SVGARePlayer {
  *
  * 与原播放逻辑互斥，请使用`stop(with scene: SVGARePlayerStoppedScene)`进行停止
  *  `- (void)stopAnimation;`
- *  `- (void)stopAnimation:(BOOL)isClear;`
+ *  `- (void)stopAnimation:(SVGARePlayerStoppedScene)scene;`
  */
 
 
