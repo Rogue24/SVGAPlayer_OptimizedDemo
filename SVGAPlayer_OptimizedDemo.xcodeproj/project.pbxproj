@@ -22,6 +22,7 @@
 		009F1D952A961699009C9FF4 /* Goddess.svga in Resources */ = {isa = PBXBuildFile; fileRef = 009F1D8B2A961699009C9FF4 /* Goddess.svga */; };
 		009F1D972A961699009C9FF4 /* Rose.svga in Resources */ = {isa = PBXBuildFile; fileRef = 009F1D8D2A961699009C9FF4 /* Rose.svga */; };
 		009F1D9B2A96213B009C9FF4 /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009F1D9A2A96213B009C9FF4 /* Constant.swift */; };
+		00CEC40A2C9EE1E300659005 /* JPProgressHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CEC4092C9EE1E300659005 /* JPProgressHUD.swift */; };
 		1AD0CD4E2B05563C0020285D /* bgImage.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 1AD0CD4D2B05563C0020285D /* bgImage.jpg */; };
 		2A7034FD0E59E659C2AA4DF3 /* Pods_SVGAPlayer_OptimizedDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 74E8B3043253ADF8BFAF85DB /* Pods_SVGAPlayer_OptimizedDemo.framework */; };
 /* End PBXBuildFile section */
@@ -47,6 +48,7 @@
 		009F1D8B2A961699009C9FF4 /* Goddess.svga */ = {isa = PBXFileReference; lastKnownFileType = file; path = Goddess.svga; sourceTree = "<group>"; };
 		009F1D8D2A961699009C9FF4 /* Rose.svga */ = {isa = PBXFileReference; lastKnownFileType = file; path = Rose.svga; sourceTree = "<group>"; };
 		009F1D9A2A96213B009C9FF4 /* Constant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constant.swift; sourceTree = "<group>"; };
+		00CEC4092C9EE1E300659005 /* JPProgressHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JPProgressHUD.swift; sourceTree = "<group>"; };
 		171C1E092135690956EB364E /* Pods-SVGAPlayer_OptimizedDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SVGAPlayer_OptimizedDemo.release.xcconfig"; path = "Target Support Files/Pods-SVGAPlayer_OptimizedDemo/Pods-SVGAPlayer_OptimizedDemo.release.xcconfig"; sourceTree = "<group>"; };
 		19225488E0EFB6221E4479D1 /* Pods-SVGAParsePlayer_Demo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SVGAParsePlayer_Demo.release.xcconfig"; path = "Target Support Files/Pods-SVGAParsePlayer_Demo/Pods-SVGAParsePlayer_Demo.release.xcconfig"; sourceTree = "<group>"; };
 		1ACE10AC2B0007AE003881D3 /* SVGAPlayer_OptimizedDemo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SVGAPlayer_OptimizedDemo-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -109,6 +111,7 @@
 				009F1D662A95FC80009C9FF4 /* ViewController.swift */,
 				009F1D9A2A96213B009C9FF4 /* Constant.swift */,
 				009F1D7F2A9608E0009C9FF4 /* Extension.swift */,
+				00CEC4092C9EE1E300659005 /* JPProgressHUD.swift */,
 				009F1D682A95FC80009C9FF4 /* Main.storyboard */,
 				009F1D6D2A95FC81009C9FF4 /* LaunchScreen.storyboard */,
 				1AD0CD4D2B05563C0020285D /* bgImage.jpg */,
@@ -278,6 +281,7 @@
 				002AEC072B0211D5006F9E5E /* SVGARePlayer.m in Sources */,
 				009F1D9B2A96213B009C9FF4 /* Constant.swift in Sources */,
 				002AEC052B0211D5006F9E5E /* SVGAExPlayer.swift in Sources */,
+				00CEC40A2C9EE1E300659005 /* JPProgressHUD.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

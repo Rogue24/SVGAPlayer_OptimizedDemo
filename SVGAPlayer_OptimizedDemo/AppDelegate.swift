@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import SVProgressHUD
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -30,8 +29,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-        SVProgressHUD.setMaxSupportedWindowLevel(.alert)
-        SVProgressHUD.setMinimumDismissTimeInterval(1.3)
+        JPProgressHUD.setMaxSupportedWindowLevel(.alert)
+        JPProgressHUD.setMinimumDismissTimeInterval(1.3)
         
         return true
     }

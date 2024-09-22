@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import SVProgressHUD
 
 class ViewController: UIViewController {
     let operationBar = UIView()
@@ -54,17 +53,15 @@ private extension ViewController {
     
     // MARK: - 反转播放
     @objc func toggleReverse(_ sender: UISwitch) {
-        SVProgressHUD.setDefaultMaskType(.none)
-        SVProgressHUD.showInfo(withStatus: sender.isOn ? "开启反转播放" : "恢复正常播放")
+        JPProgressHUD.showInfo(withStatus: sender.isOn ? "开启反转播放" : "恢复正常播放")
         player.isReversing = sender.isOn
         
         // test
-//        SVProgressHUD.setDefaultMaskType(.none)
 //        if sender.isOn {
-//            SVProgressHUD.showInfo(withStatus: "只播放30~70帧")
+//            JPProgressHUD.showInfo(withStatus: "只播放30~70帧")
 //            player.setStartFrame(30, endFrame: 100)
 //        } else {
-//            SVProgressHUD.showInfo(withStatus: "完整播放")
+//            JPProgressHUD.showInfo(withStatus: "完整播放")
 //            player.resetStartFrameAndEndFrame()
 //        }
     }
@@ -99,11 +96,10 @@ extension ViewController: SVGAExPlayerDelegate {
         isProgressing = (status == .playing || status == .paused)
         switch status {
         case .loading:
-            SVProgressHUD.setDefaultMaskType(.none)
-            SVProgressHUD.show()
+            JPProgressHUD.show(isUserInteractionEnabled: true)
             reverseSwitch.isUserInteractionEnabled = false
         default:
-            SVProgressHUD.dismiss()
+            JPProgressHUD.dismiss()
             reverseSwitch.isUserInteractionEnabled = true
         }
     }
@@ -111,32 +107,28 @@ extension ViewController: SVGAExPlayerDelegate {
     /// SVGA未知来源【无法播放】
     func svgaExPlayer(_ player: SVGAExPlayer,
                       unknownSvga source: String) {
-        SVProgressHUD.setDefaultMaskType(.none)
-        SVProgressHUD.showError(withStatus: "未知来源")
+        JPProgressHUD.showError(withStatus: "未知来源")
     }
     
     /// SVGA资源加载失败【无法播放】
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       dataLoadFailed error: Error) {
-        SVProgressHUD.setDefaultMaskType(.none)
-        SVProgressHUD.showError(withStatus: error.localizedDescription)
+        JPProgressHUD.showError(withStatus: error.localizedDescription)
     }
     
     /// 加载的SVGA资源解析失败【无法播放】
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       dataParseFailed error: Error) {
-        SVProgressHUD.setDefaultMaskType(.none)
-        SVProgressHUD.showError(withStatus: error.localizedDescription)
+        JPProgressHUD.showError(withStatus: error.localizedDescription)
     }
     
     /// 本地SVGA资源解析失败【无法播放】
     func svgaExPlayer(_ player: SVGAExPlayer,
                       svga source: String,
                       assetParseFailed error: Error) {
-        SVProgressHUD.setDefaultMaskType(.none)
-        SVProgressHUD.showError(withStatus: error.localizedDescription)
+        JPProgressHUD.showError(withStatus: error.localizedDescription)
     }
     
     /// SVGA资源无效【无法播放】
@@ -151,8 +143,7 @@ extension ViewController: SVGAExPlayerDelegate {
         case .zeroFrames: status = "SVGA资源有问题：frames是0！"
         default: return
         }
-        SVProgressHUD.setDefaultMaskType(.none)
-        SVProgressHUD.showError(withStatus: status)
+        JPProgressHUD.showError(withStatus: status)
     }
     
     /// SVGA动画执行回调【正在播放】
@@ -189,8 +180,7 @@ extension ViewController: SVGAExPlayerDelegate {
         case .onlyOnePlayableFrame: status = "只有一帧可播放帧，无法形成动画"
         default: return
         }
-        SVProgressHUD.setDefaultMaskType(.none)
-        SVProgressHUD.showError(withStatus: status)
+        JPProgressHUD.showError(withStatus: status)
     }
 }
 
@@ -280,6 +270,7 @@ private extension ViewController {
         
         player.isDebugLog = true
         player.isAnimated = true
+        player.isHideWhenStopped = false
         player.exDelegate = self
     }
     
