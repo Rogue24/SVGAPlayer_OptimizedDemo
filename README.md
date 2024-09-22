@@ -302,8 +302,13 @@ public var isDebugLog = false
 As `SVGAExPlayer` inherits from `SVGARePlayer`, to avoid errors, do not call the following APIs of `SVGARePlayer`:
 
 ```objc
-@property (nonatomic, weak) id<SVGAPlayerDelegate> delegate;
+/// The original delegate is now implemented by `self`; please use `exDelegate` for listening.
+@property (nonatomic, weak) id<SVGAOptimizedPlayerDelegate> delegate;
 
+/// The `alpha` property will be modified internally to control "show" and "hide," as well as to achieve fade-in and fade-out effects. Therefore, please avoid modifying `alpha` externally.
+@property (nonatomic) CGFloat alpha;
+
+/// External setting of `videoItem` is not allowed; it has been set internally.
 - (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem
         currentFrame:(NSInteger)currentFrame;
 - (void)setVideoItem:(nullable SVGAVideoEntity *)videoItem
@@ -313,16 +318,29 @@ As `SVGAExPlayer` inherits from `SVGARePlayer`, to avoid errors, do not call the
           startFrame:(NSInteger)startFrame 
             endFrame:(NSInteger)endFrame
         currentFrame:(NSInteger)currentFrame;
-        
+
+/// This conflicts with the original playback logic; please use APIs that start with `play` for loading and playback.
 - (BOOL)startAnimation;
 - (BOOL)stepToFrame:(NSInteger)frame;
 - (BOOL)stepToFrame:(NSInteger)frame andPlay:(BOOL)andPlay;
+
+/// This conflicts with the original playback logic; please use `pause()` to pause.
 - (void)pauseAnimation;
+
+/// This conflicts with the original playback logic; please use `stop(with scene: SVGARePlayerStoppedScene)` to stop.
 - (void)stopAnimation;
 - (void)stopAnimation:(SVGARePlayerStoppedScene)scene;
 ```
 
-* The original `delegate` is retained by conforming to `exDelegate`. All methods of the original `delegate` and the above callbacks are included.
+* `delegate`: The original delegate is implemented by `self`. If you need to listen to the previous `delegate` methods, use `exDelegate`.
+
+    * This refers to `SVGAExPlayerDelegate`, which includes the methods from the original delegate as well as the additional callback methods listed above.
+    
+* `alpha`: Please avoid modifying this externally, as it will be modified internally to control "show" and "hide," and to achieve fade-in and fade-out effects.
+
+    * Note: After SVGA stops playback, if `isHideWhenStopped` is false, `alpha` will be set to 1; otherwise, it will be set to 0 (which may not match the value modified externally).
+    
+    * If modification is necessary, ensure that `isAnimated` is false.
 
 Since we don't want to use the original APIs, why did we use inheritance from `SVGARePlayer`?
 
