@@ -22,6 +22,5 @@ Pod::Spec.new do |s|
   s.source_files = 'SVGAPlayer_Optimized/*.{h,m,swift}'
   s.public_header_files = 'SVGAPlayer_Optimized/*.h'
   
-  s.dependency 'Protobuf', '3.22.1'
-  s.dependency 'SVGAPlayer', '2.5.7'
+  s.dependency 'SVGAPlayer'
 end
