@@ -17,19 +17,11 @@ Pod::Spec.new do |s|
   s.source       = { :git => 'https://github.com/Rogue24/SVGAPlayer_Optimized.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '12.0'
-  s.static_framework = true
   s.swift_version = '5.0'
   
   s.source_files = 'SVGAPlayer_Optimized/*.{h,m,swift}'
   s.public_header_files = 'SVGAPlayer_Optimized/*.h'
   
-  s.dependency 'SVGAPlayer' do |dep|
-    dep.version = '2.5.7'
-    dep.modular_headers = true
-  end
-
-  s.dependency 'Protobuf' do |dep|
-    dep.version = '3.22.1'
-    dep.modular_headers = true
-  end
+  s.dependency 'SVGAPlayer', '2.5.7'
+  s.dependency 'Protobuf', '3.22.1'
 end
