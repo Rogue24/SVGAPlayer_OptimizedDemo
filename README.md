@@ -357,9 +357,23 @@ My `SVGARePlayer` is a refactored version based on `SVGAPlayer`, and `SVGAExPlay
 
 ## Installation
 
-SVGAPlayer_Optimized is available through [CocoaPods](https://cocoapods.org). To install
-it, simply add the following line to your Podfile:
+If you want to use this, simply go to the `SVGAPlayer_Optimized` repository and copy the files under the `SVGAPlayer_Optimized` folder
+![main_files.jpg](https://github.com/Rogue24/JPCover/raw/master/SVGAPlayer_Optimized/main_files.jpg)
+Just drag these files directly into your project.
+
+Alternatively, you can install it via CocoaPods:
 
 ```ruby
-pod 'SVGAPlayer_Optimized'
+pod 'SVGAPlayer_Optimized', :git => 'https://github.com/Rogue24/SVGAPlayer_Optimized.git', :tag => '0.1.1'
+```
+
+**Note:** Since this library depends on [SVGAPlayer](https://github.com/svga/SVGAPlayer-iOS), which is no longer maintained by the original author, and publishing to the CocoaPods public repo requires a minimum deployment target of **iOS 12+** (while the original SVGAPlayer supports **iOS 7+**), I had to fork the original SVGAPlayer, update its deployment target, and publish it as a personal pod. This goes beyond the scope of typical maintenance.
+
+That said, I *did* fork [SVGAPlayer](https://github.com/Rogue24/SVGAPlayer-iOS), updated the minimum deployment target to **iOS 12+**, and also upgraded its `Protobuf` dependency to **3.29.5**, re-generating `Svga.pbobjc` to match the updated `.proto` format. This helps avoid build issues in projects that use a newer version of `Protobuf`.
+
+If needed, you can install both libraries via CocoaPods:
+
+```ruby
+pod 'SVGAPlayer', :git => 'https://github.com/Rogue24/SVGAPlayer-iOS.git', :tag => '2.5.8'
+pod 'SVGAPlayer_Optimized', :git => 'https://github.com/Rogue24/SVGAPlayer_Optimized.git', :tag => '0.1.1'
 ```
