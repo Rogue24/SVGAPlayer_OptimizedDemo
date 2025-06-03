@@ -1,6 +1,0 @@
-framework module Pods_SVGAPlayer_OptimizedDemo {
-  umbrella header "Pods-SVGAPlayer_OptimizedDemo-umbrella.h"
-
-  export *
-  module * { export * }
-}

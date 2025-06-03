@@ -1,4 +1,4 @@
-# SVGARePlayer & SVGAExPlayer
+# SVGAPlayer_Optimized: SVGARePlayer & SVGAExPlayer
 
 `SVGARePlayer` is a new SVGA player refactored based on `SVGAPlayer`. Initially, the code was completely copied from `SVGAPlayer`, and then refactored on top of it. It was also written in Objective-C. The external interface remains basically consistent with `SVGAPlayer`, while internally it has been refactored, adjusted, enhanced, and encapsulated according to my own style. This was done to gradually replace the original `SVGAPlayer` in the project while maintaining compatibility.
 
