@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   s.author       = { 'Rogue24' => 'zhoujianping24@hotmail.com' }
   s.source       = { :git => 'https://github.com/Rogue24/SVGAPlayer_Optimized.git', :tag => s.version.to_s }
 
-  s.platform     = :ios, '12.0'
+  s.platform     = :ios, '13.0'
   s.requires_arc = true
   s.swift_version = '5.0'
   
