@@ -1,4 +1,6 @@
-# SVGAPlayer_Optimized: SVGARePlayer & SVGAExPlayer
+# SVGAPlayer_Optimized
+
+## SVGARePlayer & SVGAExPlayer
 
 `SVGARePlayer` is a new SVGA player refactored based on `SVGAPlayer`. Initially, the code was completely copied from `SVGAPlayer`, and then refactored on top of it. It was also written in Objective-C. The external interface remains basically consistent with `SVGAPlayer`, while internally it has been refactored, adjusted, enhanced, and encapsulated according to my own style. This was done to gradually replace the original `SVGAPlayer` in the project while maintaining compatibility.
 
@@ -17,7 +19,7 @@
         ✅ Compatible with both Objective-C and Swift.
         ✅ Simple and easy-to-use API.
 
-![example](https://github.com/Rogue24/JPCover/raw/master/SVGAParsePlayer_Demo/example.gif)
+![example](https://github.com/Rogue24/JPCover/raw/master/SVGAPlayer_Optimized/example.gif)
 
 `SVGAPlayer` is an old third-party library, and the author hasn't updated it for a long time. It's quite cumbersome to use. The original usage:
 
@@ -353,6 +355,11 @@ That's all for the introduction. Generally speaking, [SVGAPlayer](https://github
 
 My `SVGARePlayer` is a refactored version based on `SVGAPlayer`, and `SVGAExPlayer` is an enhanced version of `SVGARePlayer`. Besides retaining the original functionality, I mainly optimized "loading prevention" and "API simplification".
 
-If you need to use it, you can directly copy these files from the `SVGAPlayer_Optimized` folder in this demo to your project:
+## Installation
 
-![main_files](https://github.com/Rogue24/JPCover/raw/master/SVGAParsePlayer_Demo/main_files.jpg)
+SVGAPlayer_Optimized is available through [CocoaPods](https://cocoapods.org). To install
+it, simply add the following line to your Podfile:
+
+```ruby
+pod 'SVGAPlayer_Optimized'
+```
