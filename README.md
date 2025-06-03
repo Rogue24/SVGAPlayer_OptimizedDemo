@@ -357,8 +357,10 @@ My `SVGARePlayer` is a refactored version based on `SVGAPlayer`, and `SVGAExPlay
 
 ## Installation
 
-If you want to use this, simply go to the `SVGAPlayer_Optimized` repository and copy the files under the `SVGAPlayer_Optimized` folder
+If you want to use this, simply go to the `SVGAPlayer_Optimized` repository and copy the files under the `SVGAPlayer_Optimized` folder:
+
 ![main_files.jpg](https://github.com/Rogue24/JPCover/raw/master/SVGAPlayer_Optimized/main_files.jpg)
+
 Just drag these files directly into your project.
 
 Alternatively, you can install it via CocoaPods:
