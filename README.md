@@ -363,7 +363,7 @@ If you want to use this, simply go to the `SVGAPlayer_Optimized` repository and 
 
 Just drag these files directly into your project.
 
-Alternatively, you can install it via CocoaPods:
+#### Alternatively, you can install it via CocoaPods:
 
 ```ruby
 pod 'SVGAPlayer_Optimized', :git => 'https://github.com/Rogue24/SVGAPlayer_Optimized.git', :tag => '0.1.1'
@@ -373,7 +373,7 @@ pod 'SVGAPlayer_Optimized', :git => 'https://github.com/Rogue24/SVGAPlayer_Optim
 
 That said, I *did* fork [SVGAPlayer](https://github.com/Rogue24/SVGAPlayer-iOS), updated the minimum deployment target to **iOS 12+**, and also upgraded its `Protobuf` dependency to **3.29.5**, re-generating `Svga.pbobjc` to match the updated `.proto` format. This helps avoid build issues in projects that use a newer version of `Protobuf`.
 
-If needed, you can install both libraries via CocoaPods:
+#### If needed, you can install both libraries via CocoaPods:
 
 ```ruby
 pod 'SVGAPlayer', :git => 'https://github.com/Rogue24/SVGAPlayer-iOS.git', :tag => '2.5.8'
