@@ -24,6 +24,6 @@ Pod::Spec.new do |s|
   s.public_header_files = 'SVGAPlayer_Optimized/*.h'
 
   # 依赖声明
-  s.dependency 'SVGAPlayer', '2.5.7'
-  s.dependency 'Protobuf', '3.22.1'
+  s.dependency 'SVGAPlayer', '2.5.7', :modular_headers => true
+  s.dependency 'Protobuf', '3.22.1', :modular_headers => true
 end
